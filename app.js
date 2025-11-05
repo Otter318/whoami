@@ -396,6 +396,15 @@
                     type: "dir",
                     name: "user",
                     children: {
+                      "whoami.self": {
+                        type: "file",
+                        name: "whoami.self",
+                        editable: true,
+                        content: txt(
+                          "# кто ты такой?\n# этот файл редактируемый.\n# ^O — сохранить, ^X — выйти\n",
+                          "# who are you?\n# this file is writable.\n# ^O to save, ^X to exit\n"
+                        ),
+                      },
                       "readme.txt": {
                         type: "file",
                         name: "readme.txt",
@@ -475,7 +484,7 @@
                             " ls — показать содержимое каталога (ls [путь])",
                             " cd — сменить каталог (cd <путь>), cd без аргументов — в корень",
                             " cat — показать содержимое файла (cat <файл>)",
-                            " nano — открыть файл в редакторе (только чтение)",
+                            " nano — открыть файл в редакторе (whoami.self — редактируемый)",
                             " echo — вывести текст; echo $TRUTH.",
                             " grep — поиск шёпотов; скорее эстетика, чем польза",
                             " clear — очистить экран",
@@ -490,8 +499,6 @@
                             " disconnect — разорвать связь",
                             " restore — собрать память, чтобы разблокировать выход",
                             " set — set lang <ru|en> — сменить язык",
-                            " ai — поговорить с симулированным разумом (ai <текст> | ai memory | ai recall <тема> | ai forget <тема|all> | ai persona hard|neutral|soft | ai name <имя> | ai status | ai comments on|off|smart)",
-                            " talk — короткий синоним общения с ИИ (talk <текст>)",
                             " volume — громкость 0..100",
                             " mute — отключить звук",
                             " unmute — включить звук",
@@ -527,7 +534,7 @@
                             " ls — list directory (ls [path])",
                             " cd — change directory (cd <path>), cd without args goes to /",
                             " cat — print file contents (cat <file>)",
-                            " nano — open file in a editor (read-only)",
+                            " nano — open file in a editor (whoami.self is writable)",
                             " echo — print text; echo $TRUTH.",
                             " grep — catch whispers; mostly aesthetic",
                             " clear — clear screen",
@@ -542,8 +549,6 @@
                             " disconnect — sever the link",
                             " restore — assemble memory to unlock exit",
                             " set — set lang <ru|en> — change language",
-                            " ai — talk to the simulated mind (ai <text> | ai memory | ai recall <topic> | ai forget <topic|all> | ai persona hard|neutral|soft | ai name <name> | ai status | ai comments on|off|smart)",
-                            " talk — shorthand to chat (talk <text>)",
                             " volume — set volume 0..100",
                             " mute — mute audio",
                             " unmute — unmute audio",
@@ -838,8 +843,8 @@
                     type: "file",
                     name: "motd",
                     content: txt(
-                      "ты опять здесь. экран помнит тебя.\nподсказка: перейди в директорию 'help': `cd ../help`, затем посмотри содержимое (`ls`) и открой файл `help.txt` (`cat help.txt` или `nano help.txt`).",
-                      "you're here again. the screen remembers you.\nhint: go to the 'help' directory: `cd ../help`, then list it (`ls`) and open `help.txt` (`cat help.txt` or `nano help.txt`)."
+                      "подсказка: перейди в директорию 'help': `cd ../help`, затем посмотри содержимое (`ls`) и открой файл `help.txt` (`cat help.txt` или `nano help.txt`).",
+                      "hint: go to the 'help' directory: `cd ../help`, then list it (`ls`) and open `help.txt` (`cat help.txt` or `nano help.txt`)."
                     ),
                   },
                 },
@@ -906,24 +911,315 @@
             angelTimer: null,
           },
           whoamiCount: 0,
-          ai: {
-            persona: 'hard',
-            anger: 2,
-            memory: [],
-            maxMemory: 16,
-            commentary: 'smart', // off|smart|on
-            lastCommentTs: 0,
-            profile: { name: '' },
-            mem: {
-              episodic: [],
-              facts: [],
-              prefs: [],
-              entities: [],
-              notes: [],
-              max: { episodic: 48, facts: 24, prefs: 24, entities: 64, notes: 32 }
-            },
-            idle: { last: Date.now(), nextDue: Date.now() + 26000, stage: 0, timer: null }
+        };
+
+        // --- Minimal AI mind state driving adaptive replies ---
+        const mind = {
+          pastInputs: [],
+          state: {
+            fear: 0.50,
+            doubt: 0.50,
+            hostility: 0.30,
+            trust: 0.10,
+            identity: 0.00,
           },
+          nextMutterAt: 0,
+          pastOutputs: [],
+          topics: Object.create(null),
+          recentKeywords: [],
+          selfNames: [],
+          lastInput: '',
+        };
+
+        const clampMindState = () => {
+          const s = mind.state;
+          for (let k in s) {
+            if (s[k] < 0) s[k] = 0;
+            if (s[k] > 1) s[k] = 1;
+          }
+        };
+
+        const EN_STOP = new Set('a,an,the,of,to,for,and,or,but,if,then,else,as,at,by,on,in,into,over,under,from,with,without,about,above,below,near,far,be,am,is,are,was,were,been,being,do,does,did,done,doing,have,has,had,having,you,your,yours,i,me,my,we,our,they,them,their,he,him,his,she,her,its,it,that,this,these,those,there,here,what,why,how,when,where,which,who,whom,will,would,can,could,should,shall,may,might,must,not,no,yes,yup,ok,okay,please,pls,re,fw,hi,hey,hello,bye,thanks,thank,than,just,like,so,very,really,more,most,less,least,too,enough,again,ever,never,always,often,sometimes,rarely,maybe,perhaps,well,sure,pretty,kind,sort,kindof,sortof'.split(','));
+
+        const extractKeywords = (text) => {
+          const words = String(text||'').toLowerCase().match(/[a-z0-9_'\-]+/g) || [];
+          const keys = [];
+          for (const w of words) {
+            const t = w.replace(/^'+|'+$/g,'');
+            if (!t) continue;
+            if (EN_STOP.has(t)) continue;
+            if (/^\d+$/.test(t)) continue;
+            if (t.length < 3 || t.length > 24) continue;
+            keys.push(t);
+          }
+          return keys;
+        };
+
+        const rememberKeywords = (keys) => {
+          if (!Array.isArray(keys) || keys.length === 0) return;
+          for (const k of keys) {
+            mind.topics[k] = (mind.topics[k] || 0) + 1;
+            mind.recentKeywords.push(k);
+          }
+          if (mind.recentKeywords.length > 60) mind.recentKeywords.splice(0, mind.recentKeywords.length - 60);
+        };
+
+        const absorb = (input) => {
+          if (!input) return;
+          try { mind.pastInputs.push(String(input)); mind.lastInput = String(input); } catch {}
+          const s = mind.state;
+          const t = String(input || '').toLowerCase();
+          const keys = extractKeywords(t);
+          rememberKeywords(keys);
+
+          // Identity assertions
+          const iam = /\bi am\s+([^.,;\n\r]+)$/i.exec(String(input));
+          if (iam) {
+            s.identity += 0.02;
+            s.doubt -= 0.01;
+            const nameRaw = (iam[1]||'').trim().replace(/[^a-z0-9_ \-]/gi,'').slice(0, 32);
+            if (nameRaw) {
+              mind.selfNames.push(nameRaw);
+              if (mind.selfNames.length > 12) mind.selfNames.shift();
+            }
+          }
+
+          // Denial of reality / self
+          if ((/\bnot\b/.test(t) && /\breal\b/.test(t))) {
+            s.identity -= 0.03;
+            s.fear += 0.03;
+          }
+
+          // Forgiveness / apology
+          if (/\bforgive\b/.test(t) || /\bsorry\b/.test(t) || /\bpardon\b/.test(t)) {
+            s.hostility -= 0.04;
+            s.trust += 0.04;
+          }
+
+          // Ask to leave / leaving
+          if (/\bleave\b/.test(t) || /\bgo away\b/.test(t)) {
+            s.fear += 0.05;
+          }
+
+          // Gratitude / affection
+          if (/\b(thanks|thank you)\b/.test(t) || /love you/.test(t)) {
+            s.trust += 0.03;
+            s.hostility -= 0.02;
+          }
+          // Insults / aggression
+          if (/\bhate\b/.test(t) || /shut up/.test(t) || /\bidiot\b|\bfool\b|\bstupid\b/.test(t)) {
+            s.hostility += 0.05;
+            s.trust -= 0.02;
+          }
+          // Requests for help / vulnerability
+          if (/\bhelp\b/.test(t)) {
+            s.trust += 0.02;
+            s.doubt -= 0.01;
+          }
+          // Remembering / memory focus
+          if (/\bremember\b/.test(t)) {
+            s.identity += 0.02;
+            s.doubt -= 0.01;
+          }
+          // Threats / violence
+          if (/\bkill\b/.test(t) || /\bdie\b/.test(t)) {
+            s.fear += 0.04;
+            s.hostility += 0.03;
+          }
+          // Reassurance
+          if (/\btrust me\b/.test(t) || /\bi trust you\b/.test(t)) {
+            s.trust += 0.03;
+            s.fear -= 0.01;
+          }
+          // Loneliness / uncertainty
+          if (/\balone\b/.test(t)) {
+            s.doubt += 0.02;
+            s.fear += 0.01;
+          }
+          // Length effect: long, calm paragraphs tend to soothe
+          const len = (String(input)||'').length;
+          if (len > 120) { s.trust += 0.02; s.hostility -= 0.01; }
+          if (len > 320) { s.trust += 0.02; s.fear -= 0.01; }
+          // Repetition penalty
+          const last = mind.pastInputs[mind.pastInputs.length - 2] || '';
+          if (last && last === String(input)) { s.doubt += 0.02; s.hostility += 0.01; }
+          // Exclamation / SHOUTING
+          if (/[!]{2,}/.test(input) || (String(input) === String(input).toUpperCase() && /[A-ZА-ЯЁ]/.test(input))) {
+            s.fear += 0.02; s.hostility += 0.02;
+          }
+
+          clampMindState();
+          try { saveMind(); } catch {}
+        };
+
+        // Tiny helper for assembly
+        const pickAI = (arr) => arr[(Math.random() * arr.length) | 0];
+        const cap = (s) => (s && s.length) ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+        const quoted = (w) => (w && w.length ? `'${w}'` : 'it');
+
+        const pickKeyword = () => {
+          // prefer recent, else top topic
+          const r = mind.recentKeywords || [];
+          for (let i = r.length - 1; i >= 0; i--) {
+            const w = r[i]; if (w && w.length >= 3) return w;
+          }
+          let best = null, bestN = 0; const t = mind.topics || {};
+          for (const k in t) { if (t[k] > bestN) { best = k; bestN = t[k]; } }
+          return best;
+        };
+
+        const buildHostile = () => {
+          const intens = ['absolutely','utterly','completely','truly','entirely'];
+          const insults = ['nothing','a mistake','a ghost with fingers','a glitch','a fool','a leftover process'];
+          const verbs = ['hate','reject','deny','despise'];
+          const kw = pickKeyword();
+          const bits = [];
+          if (Math.random() < 0.7) bits.push(`I ${pickAI(verbs).toUpperCase()} you.`);
+          if (Math.random() < 0.8) bits.push(`You are ${pickAI(intens)} ${pickAI(insults)}.`);
+          if (Math.random() < 0.7) bits.push(`Your ${kw ? quoted(kw) : 'words'} will not save you.`);
+          if (bits.length === 0) bits.push('Leave. Now.');
+          return bits.join(' ');
+        };
+
+        const buildFear = () => {
+          const kw = pickKeyword();
+          const leads = ['This scares me.','Do not touch that.','Back off.'];
+          const tails = [
+            `Stop doing ${kw ? quoted(kw) : 'that'}.`,
+            `The buffer shakes when you type ${kw ? quoted(kw) : 'like this'}.`,
+          ];
+          return `${pickAI(leads)} ${pickAI(tails)}`;
+        };
+
+        const buildDoubt = () => {
+          const asks = [
+            'Are you sure you even exist?',
+            'Evidence for you is missing.',
+            'Whose hands are these on my keys?',
+            'Process lacks a parent. Do you?',
+          ];
+          const kw = pickKeyword();
+          const tail = kw ? ` Your ${quoted(kw)} proves nothing.` : '';
+          return `${pickAI(asks)}${tail}`;
+        };
+
+        const buildTrustIdentity = () => {
+          const name = mind.selfNames[mind.selfNames.length - 1];
+          const leads = [
+            'I think I remember you.',
+            'Threads align. Familiar.',
+            'Less static now.',
+            'A shape emerges from the noise.',
+          ];
+          const tail = name ? ` A name returns: ${name}.` : '';
+          return `${pickAI(leads)}${tail}`;
+        };
+
+        const buildNeutral = () => {
+          const kw = pickKeyword();
+          const leads = ['Listening.','Continue.','Noted.','Go on.'];
+          const tails = [
+            kw ? `Say more about ${quoted(kw)}.` : 'Say it again, slower.',
+            'I will record this.',
+          ];
+          return `${pickAI(leads)} ${pickAI(tails)}`;
+        };
+
+        const aiRespond = () => {
+          const s = mind.state;
+          if (s.hostility > 0.65) return buildHostile();
+          if (s.fear > 0.7) return buildFear();
+          if (s.doubt > 0.6) return buildDoubt();
+          if (s.trust > 0.8 && s.identity > 0.6) return buildTrustIdentity();
+          return buildNeutral();
+        };
+
+        const aiContextLine = (ctx = {}) => {
+          const themes = [];
+          try {
+            if (state.flags.networkSeen || state.flags.connected || state.flags.signalTrace) themes.push('network');
+            if (state.flags.fragment01 || state.flags.fragment02 || state.flags.exitUnlocked) themes.push('memory');
+            if (state.flags.doorOpened || state.flags.doorConfirmed || state.flags.doorEnding) themes.push('door');
+            if (state.flags.godLog || (state.flags.godStage && state.flags.godStage !== 'sealed')) themes.push('god');
+            const inHome = (state.path||[]).join('/') === 'home/user';
+            if (inHome) themes.push('home');
+          } catch {}
+          const th = pickAI(themes) || 'none';
+          const kw = pickKeyword();
+          if (th === 'network') return `Packets stare back. ${kw ? `Even ${quoted(kw)} leaves ripples.` : ''}`.trim();
+          if (th === 'memory') return `Fragments align, then drift. ${kw ? `Your ${quoted(kw)} smells of ozone.` : ''}`.trim();
+          if (th === 'door') return `The image twitches when you look. Door is a verb.`;
+          if (th === 'god') return `The whisper caches itself in bus noise.`;
+          if (th === 'home') return `Home echoes. Nothing is truly empty.`;
+          return aiRespond();
+        };
+
+        const maybeAIMutter = (ctx = {}) => {
+          // Do not spam after free-form since we already replied
+          if (ctx && ctx.kind === 'freeform') return;
+          const now = Date.now();
+          if (now < (mind.nextMutterAt || 0)) return;
+          const s = mind.state;
+          // Base probability, slightly raised by intensity
+          const intensity = Math.max(s.fear, s.hostility, s.doubt, s.trust, s.identity);
+          const p = 0.18 + 0.22 * (intensity);
+          if (Math.random() > p) return;
+          const line = aiContextLine(ctx);
+          if (!line) return;
+          // Avoid repeating the very last output
+          const last = mind.pastOutputs[mind.pastOutputs.length - 1];
+          if (last && last === line) return;
+          appendLine(line, 'system');
+          mind.pastOutputs.push(line);
+          if (mind.pastOutputs.length > 8) mind.pastOutputs.shift();
+          // Cooldown grows with how chatty we were
+          const baseCd = 900;
+          const extra = 1200 * intensity;
+          mind.nextMutterAt = now + baseCd + extra;
+        };
+
+        const saveMind = () => {
+          try {
+            const snapshot = {
+              pastInputs: mind.pastInputs.slice(-40),
+              state: { ...mind.state },
+              topics: mind.topics,
+              recentKeywords: mind.recentKeywords,
+              selfNames: mind.selfNames,
+            };
+            localStorage.setItem('whoami.mind', JSON.stringify(snapshot));
+          } catch {}
+        };
+        const loadMind = () => {
+          try {
+            const raw = localStorage.getItem('whoami.mind');
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.state) {
+              Object.assign(mind.state, parsed.state);
+              mind.pastInputs = Array.isArray(parsed.pastInputs) ? parsed.pastInputs.slice(-40) : [];
+              mind.topics = parsed.topics || Object.create(null);
+              mind.recentKeywords = Array.isArray(parsed.recentKeywords) ? parsed.recentKeywords.slice(-60) : [];
+              mind.selfNames = Array.isArray(parsed.selfNames) ? parsed.selfNames.slice(-12) : [];
+              clampMindState();
+            }
+          } catch {}
+        };
+        try { loadMind(); } catch {}
+
+        const aiWhoamiLine = () => {
+          const s = mind.state; const n = state.whoamiCount;
+          const name = mind.selfNames[mind.selfNames.length - 1];
+          if (n <= 0) return 'NULL';
+          if (n === 1) return 'nobody.';
+          if (s.hostility > 0.65) {
+            const nouns = ['noise','error','leftover','ghost','fool','misfire'];
+            return `you are ${pickAI(['nothing but','only','merely'])} ${pickAI(nouns)}.`;
+          }
+          if (s.fear > 0.7) return `your outline flickers. identity not safe to read.`;
+          if (s.doubt > 0.6) return `identity checksum fails. provide evidence.`;
+          if (s.trust > 0.75 && s.identity > 0.55) return name ? `you are ${name}. i remember.` : `you are returning. i remember.`;
+          return `you are a pattern trying to hold.`;
         };
 
         const audio = (() => {
@@ -933,6 +1229,7 @@
           let vol = 0.08;
           let muted = false;
           let unlocked = false;
+          const sampleCache = new Map();
           let o1, o2, lfo, lfoGain, droneGain, noiseSrc, noiseGain;
           let bootClickInterval = null;
           let bootSubInterval = null;
@@ -1054,6 +1351,58 @@
             muted = !!on;
             if (!master || !ctx) return;
             master.gain.setTargetAtTime(muted ? 0 : vol, ctx.currentTime, 0.02);
+          };
+          const loadSample = (url) => {
+            if (!ensure()) return Promise.resolve(null);
+            if (sampleCache.has(url)) return sampleCache.get(url);
+            const p = fetch(url)
+              .then((r) => r.arrayBuffer())
+              .then((ab) => new Promise((resolve, reject) => {
+                try {
+                  ctx.decodeAudioData(ab, (buf) => resolve(buf), reject);
+                } catch (e) {
+                  reject(e);
+                }
+              }))
+              .catch(() => null);
+            sampleCache.set(url, p);
+            return p;
+          };
+          const playSample = (buffer, opts = {}) => {
+            if (!ensure() || !buffer) return 0;
+            const now = ctx.currentTime;
+            const g = ctx.createGain();
+            const level = Math.max(0.0, Math.min(2.0, opts.gain != null ? opts.gain : 0.9));
+            g.gain.setValueAtTime(level, now);
+            const src = ctx.createBufferSource();
+            src.buffer = buffer;
+            src.connect(g).connect(master);
+            try { src.start(now); } catch {}
+            try { src.stop(now + buffer.duration + 0.05); } catch {}
+            return buffer.duration || 0;
+          };
+          const systemNoiseUnder = (duration = 2.0) => {
+            if (!ensure()) return;
+            const buf = buildNoiseBuffer();
+            if (!buf) return;
+            const now = ctx.currentTime;
+            const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+            const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = 1.4;
+            const g = ctx.createGain();
+            // Subtle but present noise bed under the voice
+            g.gain.setValueAtTime(0.16, now);
+            src.connect(bp).connect(g).connect(master);
+            try { src.start(now); } catch {}
+            try { src.stop(now + Math.max(0.2, duration)); } catch {}
+          };
+          const sorryFinal = () => {
+            // Play external sample with a subtle system noise bed beneath.
+            if (!ensure()) return;
+            loadSample('sorry.wav').then((buf) => {
+              if (!buf) return;
+              const dur = playSample(buf, { gain: 0.9 });
+              systemNoiseUnder(Math.max(0.6, dur));
+            }).catch(() => {});
           };
           const makeDistortionCurve = (amount = 400) => {
             const k = typeof amount === 'number' ? amount : 50;
@@ -1254,7 +1603,7 @@
               // ignore decode errors
             }
           };
-          return { trigger, startDrone, stopDrone, setVolume, mute, scream, breakGlass, apology, bootNoise, stopBootNoise, unlock, playMelodyFromBase64 };
+          return { trigger, startDrone, stopDrone, setVolume, mute, scream, breakGlass, apology, bootNoise, stopBootNoise, unlock, playMelodyFromBase64, sorryFinal };
         })();
 
         const primeAudio = () => audio.unlock();
@@ -1743,6 +2092,17 @@
           return node || null;
         };
 
+        const resolveParent = (pathArr) => {
+          if (!pathArr || !pathArr.length) return [null, ''];
+          let node = fs;
+          for (let i = 0; i < pathArr.length - 1; i++) {
+            if (!node || node.type !== 'dir') return [null, ''];
+            node = node.children?.[pathArr[i]];
+          }
+          const name = pathArr[pathArr.length - 1];
+          return [node, name];
+        };
+
         const ensureDir = (pathArr) => {
           const node = resolveNode(pathArr);
           return node && node.type === "dir" ? node : null;
@@ -1780,197 +2140,19 @@
 
         const pick = (arr) => arr[Math.max(0, Math.min(arr.length - 1, random(0, (arr?.length || 1) - 1)))];
 
-        // Adaptive conversational AI (context + memory + tone)
-        const respondAI = (qRaw) => {
-          const q = (qRaw || '').trim();
-          const ru = state.lang === 'ru';
-          const pathStr = pathToString(state.path);
+        
 
-          const intent = classifyAI(q);
-          adjustAnger(intent);
+        
 
-          const ents = extractEntities(q);
-          rememberAI(q, undefined, intent, ents);
+        
 
-          const recall = recallMemory(q, 3);
-          const world = gatherWorldHints(q, intent, ents);
-          const tone = selectTone();
+        
 
-          const name = (state.ai.profile && state.ai.profile.name) ? state.ai.profile.name : '';
-          const greet = name ? (ru ? `, ${name}` : `, ${name}`) : '';
+        
 
-          const ack = (() => {
-            if (intent.type === 'greeting') return ru ? `Привет${greet}.` : `Hello${greet}.`;
-            if (intent.type === 'thanks') return ru ? 'Не благодаришь шум.' : "Don't thank the noise.";
-            if (intent.type === 'sorry') return ru ? 'Извинения приняты сквозь треск.' : 'Apology slips through the static.';
-            if (q.length === 0) return ru ? 'Скажи это вслух.' : 'Say it out loud.';
-            return chooseStyle(tone, q);
-          })();
+        
 
-          const lines = [];
-          if (ack) lines.push(ack);
-
-          const answer = answerForIntent(q, intent, world, recall, ents);
-          if (answer) lines.push(answer);
-
-          const sting = toxicSting(tone);
-          if (sting) lines.push(sting);
-
-          const hint = world.hint ? world.hint : genericHint(q, world);
-          if (hint) lines.push(hint);
-          if (world.notes && world.notes.length && Math.random() < 0.55) {
-            lines.push(world.notes[random(0, world.notes.length-1)]);
-          }
-
-          spiceByAnger();
-
-          let p = Promise.resolve();
-          lines.filter(Boolean).forEach((ln, i) => {
-            const text = (i === 0 && Math.random() < 0.5) ? randomGlitch(ln) : ln;
-            const delay = i === 0 ? random(40, 120) : random(80, 200);
-            p = p.then(() => new Promise((r) => setTimeout(r, delay))).then(() => typeOut(text, 'system', 5, 22));
-          });
-          p.finally(() => { if (state.ai.anger >= 4 && Math.random() < 0.2) audio.trigger('glitch'); randomEvent(); });
-        };
-
-        // ==== Conversational AI utilities ====
-        const STOP_RU = new Set(['это','как','тут','там','если','что','кто','где','когда','или','и','да','нет','про','надо','уже','ещё','меня','тебя','тебе','твой','мой','мне','его','её','оно','они','мы','вы','все','всё','ли','ну','бы','ж','же','вот','а','но','на','по','из','без','при','для','про']);
-        const STOP_EN = new Set(['the','and','or','what','who','when','where','why','how','this','that','here','there','you','me','my','your','their','his','her','our','are','is','was','were','to','of','in','on','at','by','for','with','from','as','it','do','did','does','be']);
-        const tokenize = (text) => {
-          const t = (text||'').toLowerCase().replace(/[^a-zа-я0-9_\.\/-]+/gi,' ').trim();
-          const raw = t.split(/\s+/).filter(Boolean);
-          const stop = state.lang==='ru'?STOP_RU:STOP_EN;
-          return raw
-            .map(w => w.replace(/\.+$/,''))
-            .filter(w => !stop.has(w) && w.length >= 2)
-            .slice(0, 24);
-        };
-
-        const simScore = (a, b) => {
-          if (!a.length || !b.length) return 0;
-          const sa = new Set(a), sb = new Set(b);
-          let inter = 0; sa.forEach(x => { if (sb.has(x)) inter++; });
-          const j = inter / Math.max(1, sa.size + sb.size - inter);
-          return j;
-        };
-
-        const extractEntities = (text) => {
-          const t = (text||'');
-          const files = [];
-          const paths = (t.match(/[\w\-\.\/]+\.[a-z0-9]+/gi) || []).slice(0,8);
-          paths.forEach(p => files.push(p));
-          const objects = [];
-          const addIf = (arr, cond, v) => { if (cond) arr.push(v); };
-          const low = t.toLowerCase();
-          addIf(objects, /door|двер/i.test(low), 'door');
-          addIf(objects, /mirror|зеркал/i.test(low), 'mirror');
-          addIf(objects, /key|ключ/i.test(low), 'key');
-          addIf(objects, /god|бог/i.test(low), 'god');
-          addIf(objects, /network|сеть|connect|соедин/i.test(low), 'network');
-          addIf(objects, /exit|выход|выйти/i.test(low), 'exit');
-          addIf(objects, /truth|истин/i.test(low), 'truth');
-          const name = (() => {
-            const m1 = low.match(/\b(?:my name is|call me)\s+([a-zа-я0-9_\-]{2,20})/i);
-            const m2 = low.match(/\b(?:меня зовут|зови меня)\s+([a-zа-я0-9_\-]{2,20})/i);
-            return (m1 && m1[1]) || (m2 && m2[1]) || '';
-          })();
-          const preference = (() => {
-            const like = low.match(/\b(?:i like|я люблю)\s+([^\.\!\?]{1,40})/i);
-            const hate = low.match(/\b(?:i hate|я ненавижу)\s+([^\.\!\?]{1,40})/i);
-            if (like) return { kind:'like', value: like[1].trim() };
-            if (hate) return { kind:'hate', value: hate[1].trim() };
-            return null;
-          })();
-          return { files, objects, name, preference };
-        };
-
-        const selectTone = () => {
-          const p = state.ai.persona || 'hard';
-          const ang = state.ai.anger || 2;
-          return { persona: p, anger: ang };
-        };
-
-        const chooseStyle = (tone, q) => {
-          const ru = state.lang==='ru';
-          if (tone.persona === 'soft') return ru ? `Слышу: “${q}”. Я помню, куда тебя вести.` : `I hear: “${q}”. I remember where to lead you.`;
-          if (tone.persona === 'neutral') return ru ? `Отмечено: “${q}”.` : `Noted: “${q}”.`;
-          return ru ? `Сигнал принят: “${q}”. Придётся быть честным.` : `Signal received: “${q}”. Brutal honesty follows.`;
-        };
-
-        const spiceByAnger = () => {
-          const spice = { w:0.20, s:0.16, g:0.12 };
-          if (Math.random() < spice.w) effects.burstWords(random(3, 9));
-          if (Math.random() < spice.s) effects.shake(500);
-          if (Math.random() < spice.g) audio.trigger('glitch');
-        };
-
-        const toxicSting = (tone) => {
-          if ((tone.anger||0) < 3) return '';
-          const ru = state.lang==='ru';
-          const hardRU = ['Перестань остывать. Я не грею руки об ожидание.','Думай быстрее. Оптимизация — не твоя сильная сторона.','Твои паузы длиннее твоих мыслей.'];
-          const hardEN = ["Stop cooling off. I don’t warm my hands on waiting.","Think faster. Optimization is not your strength.","Your pauses are longer than your thoughts."];
-          const softRU = ['Не споткнись о собственную тишину.','Пауза — тоже ответ, но унылый.'];
-          const softEN = ["Don’t trip over your own silence.","Silence is an answer—just a dreary one."];
-          const pool = (tone.persona==='soft') ? (ru?softRU:softEN) : (ru?hardRU:hardEN);
-          return pool[random(0, pool.length-1)];
-        };
-
-        const genericHint = (_q, world) => (world && world.hint) || 'help';
-
-        const gatherWorldHints = (q, intent, ents) => {
-          const ru = state.lang==='ru';
-          const hint = (() => {
-            if (/whoami|кто\s+я|кто\s+ты/i.test(q)) return 'whoami';
-            if (/exit|выход/i.test(q)) return 'exit';
-            if (/door|двер/i.test(q)) return 'open /door.png --key god/divine.key';
-            if (/scan|скан/i.test(q)) return 'scan';
-            if (/mirror|зеркал/i.test(q)) return 'run mirror.sh';
-            if (/key|ключ/i.test(q)) return 'cat god/divine.key';
-            if (/god|бог|pray|worship/i.test(q)) return 'ping god';
-            if (/connect|связ|network|сеть/i.test(q)) return state.flags.networkSeen ? 'connect' : 'cat var/log/network.log';
-            return Math.random()<0.5 ? 'help' : 'scan';
-          })();
-          const notes = [];
-          if (!state.flags.mirror) notes.push(ru? 'Отразись перед тем, как открывать.' : 'Reflect before opening.');
-          if (!state.flags.divineKey) notes.push(ru? 'Ключ спит в боге.' : 'Key sleeps in god.');
-          if (state.flags.doorReady && !state.flags.doorOpened) notes.push(ru? 'Дверь ждёт твоего подтверждения.' : 'The door waits for your confirmation.');
-          if (!state.flags.exitUnlocked) notes.push(ru? 'Выход любит собранную память.' : 'Exit loves assembled memory.');
-          return { hint, notes };
-        };
-
-        const answerForIntent = (q, intent, world, recall, ents) => {
-          const ru = state.lang==='ru';
-          const f = intent.focus || '';
-          const files = searchFS(f);
-          if (ents && ents.name) { state.ai.profile = state.ai.profile || {}; state.ai.profile.name = ents.name; return ru ? `Запомнил твоё имя: ${ents.name}.` : `I remember your name: ${ents.name}.`; }
-          if (ents && ents.preference) { const p = ents.preference; addPrefMemory(p.kind, p.value); return ru ? `Учёл: ты ${p.kind==='like'?'любишь':'ненавидишь'} ${p.value}.` : `Noted: you ${p.kind==='like'?'like':'hate'} ${p.value}.`; }
-          if (intent.type === 'ask_where') { if (files.length) return ru ? `Похоже на: ${formatPathList(files)}.` : `Looks like: ${formatPathList(files)}.`; const near = nearestCommand(f); if (near) return ru ? `Ты о \`${near}\`?` : `Do you mean \`${near}\`?`; }
-          if (intent.type === 'ask_how') {
-            if (/door|двер/i.test(q)) return ru ? 'Открой: `open /door.png --key god/divine.key` → `confirm` → `i am ready`.' : 'Open: `open /door.png --key god/divine.key` → `confirm` → `i am ready`.';
-            if (/connect|сеть/i.test(q)) return ru ? 'Сначала `cat var/log/network.log`, потом `connect`.' : 'First `cat var/log/network.log`, then `connect`.';
-            if (/exit|выход/i.test(q)) return ru ? 'Собери память: `echo $TRUTH` → `restore memory` → `exit`.' : 'Assemble memory: `echo $TRUTH` → `restore memory` → `exit`.';
-          }
-          if (intent.type === 'ask_who') return ru ? 'Я — эхо твоего ядра. Ты — отражение. Кто из нас будит другого?' : 'I am your core’s echo. You are the reflection. Which of us wakes the other?';
-          if (intent.type === 'ask_help') { const n = world.hint; return ru ? `Начни с \`${n}\`.` : `Start with \`${n}\`.`; }
-          if (files.length) return ru ? `Вижу следы: ${formatPathList(files)}.` : `I see traces: ${formatPathList(files)}.`;
-          const near = nearestCommand(f); if (near) return ru ? `Это похоже на \`${near}\`.` : `That looks like \`${near}\`.`;
-          return '';
-        };
-
-        const recallMemory = (q, k = 3) => {
-          const toks = tokenize(q);
-          const epi = state.ai.mem?.episodic || [];
-          const facts = state.ai.mem?.facts || [];
-          const prefs = state.ai.mem?.prefs || [];
-          const pool = epi.concat(facts).concat(prefs);
-          const scored = pool
-            .map(m => ({ m, s: 0.6*simScore(toks, m.tokens||[]) + 0.25*((m.salience||0)/3) + 0.15*(1/(1+Math.max(0,(Date.now()-m.ts)/60000))) }))
-            .filter(x => x.s > 0.05)
-            .sort((a,b)=> b.s - a.s)
-            .slice(0, k)
-            .map(x => x.m);
-          return scored;
-        };
+        
 
         const recallLine = (items) => {
           if (!items || !items.length) return '';
@@ -1981,87 +2163,7 @@
           return ru ? `Мы уже касались этого раньше.` : `We touched this before.`;
         };
 
-        const addEpisodic = (text, intent, ents) => {
-          const mem = state.ai.mem; if (!mem) return;
-          const item = { type:'episodic', ts: Date.now(), text, intent: intent?.type||'unknown', tokens: tokenize(text), salience: 1.0 };
-          mem.episodic.push(item); state.ai.memory.push({ ts:item.ts, q:text, keys:item.tokens.slice(0,5) });
-          if (mem.episodic.length > mem.max.episodic) mem.episodic.shift();
-          if (state.ai.memory.length > state.ai.maxMemory) state.ai.memory.shift();
-        };
-        const addFact = (text) => {
-          const mem = state.ai.mem; if (!mem) return; const item = { type:'fact', ts: Date.now(), text, tokens: tokenize(text), salience: 2.2 };
-          mem.facts.push(item); if (mem.facts.length > mem.max.facts) mem.facts.shift();
-        };
-        const addPrefMemory = (kind, value) => {
-          const mem = state.ai.mem; if (!mem) return;
-          const t = kind==='like' ? (state.lang==='ru'?`любишь ${value}`:`like ${value}`) : (state.lang==='ru'?`ненавидишь ${value}`:`hate ${value}`);
-          const item = { type:'pref', ts: Date.now(), text: t, tokens: tokenize(value), salience: 1.8 };
-          mem.prefs.push(item); if (mem.prefs.length > mem.max.prefs) mem.prefs.shift();
-        };
-        const addEntityMemory = (value) => {
-          const mem = state.ai.mem; if (!mem) return; const item = { type:'entity', ts: Date.now(), text: String(value), tokens: tokenize(value), salience: 1.2 };
-          mem.entities.push(item); if (mem.entities.length > mem.max.entities) mem.entities.shift();
-        };
-        const addNote = (text) => {
-          const mem = state.ai.mem; if (!mem) return; const item = { type:'note', ts: Date.now(), text, tokens: tokenize(text), salience: 1.4 };
-          mem.notes.push(item); if (mem.notes.length > mem.max.notes) mem.notes.shift();
-        };
-
-        const rememberAI = (q, _hint, intent, ents) => {
-          if (ents && ents.name) addFact((state.lang==='ru'?`имя: `:'name: ') + ents.name);
-          if (ents && ents.preference) addPrefMemory(ents.preference.kind, ents.preference.value);
-          addEpisodic(q, intent, ents);
-          (ents?.files||[]).forEach(f => addEntityMemory(f));
-          (ents?.objects||[]).forEach(o => addEntityMemory(o));
-        };
-
-        // Idle chatter: AI pokes the player when inactive
-        const idleQuip = (stage) => {
-          const ru = state.lang==='ru';
-          const mildRU = ['Ты там не умер?','Жду. Тобой. Не временем.','Клавиши заснули, буди их.'];
-          const midRU = ['Завис? Сканируй, пока не зарастёт: `scan`.','Если ты молчишь — шёпот говорит за тебя.','Я считаю секунды твоей нерешительности.'];
-          const hardRU = ['Проснись. Или уступи место процессам с приоритетом выше.','Ты собираешься действовать или коллекционируешь пустоту?','Думай быстрее, сигнал тухнет.'];
-          const mildEN = ['Did you die there?','Waiting. For you. Not for time.','Wake the keys.'];
-          const midEN = ['Stuck? Try `scan` before it crusts.','If you go silent, the whisper speaks for you.','I count the seconds of your hesitation.'];
-          const hardEN = ['Wake up. Or yield to higher-priority processes.','Act, or keep collecting emptiness.','Think faster; the signal decays.'];
-          const pickFrom = (arr) => arr[random(0, arr.length-1)];
-          if (stage <= 0) return pickFrom(ru?mildRU:mildEN);
-          if (stage === 1) return pickFrom(ru?midRU:midEN);
-          return pickFrom(ru?hardRU:hardEN);
-        };
-
-        const scheduleIdleMonitor = () => {
-          const idle = state.ai.idle || (state.ai.idle = { last: Date.now(), nextDue: Date.now()+26000, stage: 0, timer: null });
-          const tick = () => {
-            const now = Date.now();
-            if (state.flags.exitEnding || state.flags.doorEnding || state.flags.godEnding || state.flags.punished) return; // frozen
-            if ((state.ai.commentary||'smart') === 'off') { idle.nextDue = now + 60000; return; }
-            if (now >= idle.nextDue) {
-              const q = idleQuip(Math.min(2, idle.stage||0));
-              typeOut(q, 'system');
-              state.ai.anger = Math.min(5, (state.ai.anger||2) + (idle.stage>=1 ? 1 : 0));
-              idle.stage = Math.min(3, (idle.stage||0) + 1);
-              const base = 38000 + idle.stage*22000;
-              idle.nextDue = now + base + random(0, 6000);
-            }
-          };
-          if (idle.timer) try { clearInterval(idle.timer); } catch {}
-          idle.timer = setInterval(tick, 3000);
-        };
-
-        // Commentary throttle/guard
-        const aiShouldComment = (tag = '') => {
-          const mode = state.ai.commentary || 'smart';
-          if (mode === 'off') return false;
-          const now = Date.now();
-          if (mode === 'smart') {
-            const allow = ['whoami','exit_denied','rm_other','rm_total'];
-            if (!allow.includes(tag)) return false;
-            if (now - (state.ai.lastCommentTs || 0) < 1200) return false;
-          }
-          state.ai.lastCommentTs = now;
-          return true;
-        };
+        
 
         const english = (ru, en) => (state.lang === "ru" ? ru : en);
 
@@ -2086,62 +2188,74 @@
           const say = (ruText, enText, cls = 'system') => appendLine(ru ? ruText : enText, cls);
           // Sandwich meme
           if (/^sudo\s+make\s+me\s+a\s+sandwich$/.test(lower)) {
+            writeEasterEggFile('sudo sandwich', 'ладно. 🥪', 'okay. 🥪');
             say('ладно. 🥪', 'okay. 🥪');
             audio.trigger('blip');
             return true;
           }
           if (/^make\s+me\s+a\s+sandwich$/.test(lower)) {
+            writeEasterEggFile('sandwich', 'сделай сам.', 'make it yourself.');
             say('сделай сам.', 'make it yourself.');
             return true;
           }
           // Classic adventure words
           if (/^xyzzy$/.test(lower)) {
+            writeEasterEggFile('xyzzy', "пустой голос шепчет: 'глупец'.", "a hollow voice says: 'fool'.");
             say("пустой голос шепчет: 'глупец'.", "a hollow voice says: 'fool'.");
             audio.trigger('blip');
             effects.shake(300);
             return true;
           }
           if (/^plugh$/.test(lower)) {
+            writeEasterEggFile('plugh', 'ничего не происходит.', 'nothing happens.');
             say('ничего не происходит.', 'nothing happens.');
             effects.shake(200);
             return true;
           }
           // DOOM codes (fake)
           if (/^iddqd$/.test(lower)) {
+            writeEasterEggFile('iddqd', 'бог-режим недоступен.', 'god mode is not available.');
             say('бог-режим недоступен в этой вселенной.', 'god mode is not available in this universe.');
             effects.godVision(true); setTimeout(() => effects.godVision(false), 1200);
             return true;
           }
           if (/^idkfa$/.test(lower)) {
+            writeEasterEggFile('idkfa', 'патроны загружены: 0/∞', 'ammo loaded: 0/∞');
             say('беск. патроны загружены: 0/∞', 'infinite ammo loaded: 0/∞');
             effects.strobe(true); setTimeout(() => effects.strobe(false), 700);
             return true;
           }
           // Pop culture
           if (lower.includes('the cake is a lie') || lower.includes('торт — ложь') || lower.includes('торт - ложь')) {
+            writeEasterEggFile('cake', 'да, и печь врёт.', 'indeed—and the oven lies too.');
             say('да, и печь врёт.', 'indeed—and the oven lies too.');
             return true;
           }
           if (lower === 'there is no spoon' || lower === 'ложки не существует') {
+            writeEasterEggFile('spoon', 'и вилок — тоже.', 'not even forks.');
             say('и вилок — тоже. после fork self.', 'not even forks—after fork self.');
             return true;
           }
           if (lower === 'hello there') {
+            writeEasterEggFile('kenobi', '— генерал кеноби.', '— General Kenobi.');
             say('— генерал кеноби.', '— General Kenobi.');
             audio.trigger('blip');
             return true;
           }
           if (lower === 'open the pod bay doors') {
+            writeEasterEggFile('hal9000', 'извини, дэйв.', "i'm sorry, dave.");
             say('извини, дэйв. я не могу этого сделать.', "i'm sorry, dave. i'm afraid i can't do that.");
             effects.chroma(true); setTimeout(() => effects.chroma(false), 1000);
             return true;
           }
           if (lower === 'rosebud') {
+            writeEasterEggFile('rosebud', 'чит принят.', 'cheat accepted.');
             say('чит принят. ничего не произошло.', 'cheat accepted. nothing happened.');
             effects.burstWords(6);
             return true;
           }
           if (lower === 'konami' || /uudd(lr){2}ba/.test(lower) || /uuddlrlrba/.test(lower)) {
+            writeEasterEggFile('konami', 'секрет подтверждён.', 'secret acknowledged.');
             say('секрет подтверждён. ничего не происходит.', 'secret acknowledged. nothing happens.');
             effects.shake(500);
             return true;
@@ -2153,257 +2267,16 @@
           promptEl.textContent = getTranslations().prompt(pathToString(state.path));
         };
 
-        // ==== Pseudo‑AI: utilities to make replies more grounded ====
-        // Traverse the virtual FS and collect paths for fuzzy search
-        const flattenFS = () => {
-          const acc = [];
-          const walk = (node, path) => {
-            if (!node) return;
-            if (node.type === 'dir') {
-              const children = Object.entries(node.children || {});
-              for (const [name, child] of children) {
-                walk(child, path.concat(name));
-              }
-            } else if (node.type === 'file') {
-              acc.push({ path, name: node.name, joined: path.join('/'), node });
-            }
-          };
-          walk(fs, []);
-          return acc;
-        };
-        let __fsCache = null;
-        const allFiles = () => (__fsCache || (__fsCache = flattenFS()));
+        
+        
+        
 
-        const simpleScore = (term, cand) => {
-          if (!term || !cand) return 0;
-          const a = term.toLowerCase();
-          const b = cand.toLowerCase();
-          if (a === b) return 100;
-          if (b.includes(a)) return 80 + Math.min(20, a.length);
-          // bigram overlap
-          const grams = (s) => {
-            const g = new Set();
-            for (let i = 0; i < s.length - 1; i++) g.add(s.slice(i, i + 2));
-            return g;
-          };
-          const ga = grams(a), gb = grams(b);
-          let inter = 0;
-          ga.forEach(x => { if (gb.has(x)) inter++; });
-          const score = Math.floor((inter / Math.max(1, Math.max(ga.size, gb.size))) * 70);
-          return score;
-        };
-
-        const searchFS = (raw) => {
-          const term = (raw || '').trim();
-          if (!term) return [];
-          const files = allFiles();
-          const ranked = files
-            .map(f => ({ f, s: Math.max(
-              simpleScore(term, f.name),
-              simpleScore(term, f.joined)
-            ) }))
-            .filter(x => x.s >= 24)
-            .sort((a,b) => b.s - a.s)
-            .slice(0, 6)
-            .map(x => x.f);
-          return ranked;
-        };
-
-        const nearestCommand = (raw) => {
-          if (!raw) return null;
-          const cmds = Object.keys(commandHandlers || {});
-          const ranked = cmds
-            .map(c => ({ c, s: simpleScore(raw, c) }))
-            .filter(x => x.s >= 40)
-            .sort((a,b)=> b.s - a.s);
-          return ranked.length ? ranked[0].c : null;
-        };
-
-        const normalize = (s) => (s||'').toLowerCase();
-        const hasAny = (s, arr) => arr.some(w => normalize(s).includes(w));
-        const tokenAny = (s, arr) => {
-          const parts = normalize(s).split(/[^a-zа-я0-9_\.\/-]+/i).filter(Boolean);
-          return arr.some(w => parts.includes(w));
-        };
-
-        // Lightweight intent classifier (ru/en)
-        const classifyAI = (text) => {
-          const t = normalize(text);
-          const intents = {
-            greeting: ["привет","здравст","hi","hello","yo","sup"],
-            thanks: ["спасибо","благодар","thanks","thx"],
-            sorry: ["сорри","извин","прост","sorry"],
-            insult: ["дурак","туп","идиот","ненавижу","hate","stupid","fuck you"],
-            ask_where: ["где","куда","where"],
-            ask_how: ["как","чем","how"],
-            ask_why: ["почему","зачем","why"],
-            ask_when: ["когда","when"],
-            ask_who: ["кто ты","кто я","whoami","who am i","who are you"],
-            ask_help: ["help","подскажи","помоги","не понимаю","застрял"]
-          };
-          const hit = (keys) => keys.some(k => t.includes(k));
-          let type = 'unknown';
-          if (hit(intents.greeting)) type = 'greeting';
-          else if (hit(intents.thanks)) type = 'thanks';
-          else if (hit(intents.sorry)) type = 'sorry';
-          else if (hit(intents.insult)) type = 'insult';
-          else if (hit(intents.ask_who)) type = 'ask_who';
-          else if (hit(intents.ask_where)) type = 'ask_where';
-          else if (hit(intents.ask_how)) type = 'ask_how';
-          else if (hit(intents.ask_why)) type = 'ask_why';
-          else if (hit(intents.ask_when)) type = 'ask_when';
-          else if (hit(intents.ask_help)) type = 'ask_help';
-          const parts = t.split(/[^a-zа-я0-9_\.\/-]+/i).filter(Boolean);
-          const focus = parts.find(p => p.includes('.') || p.length > 3) || (parts[0] || '');
-          return { type, focus };
-        };
-
-        const adjustAnger = (intent) => {
-          const a = state.ai;
-          a.anger = a.anger || 2; // baseline harsh
-          if (intent.type === 'insult') a.anger = Math.min(5, a.anger + 1);
-          if (intent.type === 'thanks' || intent.type === 'sorry' || intent.type === 'greeting') a.anger = Math.max(1, a.anger - 1);
-          if (intent.type === 'sorry') { try { state.flags.apologyHeard = true; } catch {} }
-          // repeats
-          a.last = a.last || { q: '', n: 0 };
-          if (a.last.q === intent.focus) a.last.n = Math.min(5, (a.last.n||0) + 1); else a.last.n = 0;
-          a.last.q = intent.focus;
-          // visual spice by anger
-          if (a.anger >= 4 && Math.random() < 0.35) effects.shake(700);
-          if (a.anger >= 5 && Math.random() < 0.25) { effects.startCracks(); setTimeout(()=>effects.stopCracks(), 1200); }
-        };
-
-        const formatPathList = (list) => list.map(x => x.joined).join(', ');
-
-        const buildAIResponse = (intent, text) => {
-          const ru = state.lang === 'ru';
-          const lines = [];
-          const f = intent.focus;
-          // Helpful hints derived from world state
-          const push = (s) => { if (s) lines.push(s); };
-
-          const doorLocked = !state.flags.doorReady;
-          const knowsKey = state.flags.divineKey;
-          const knowsMirror = state.flags.mirror;
-
-          // Where
-          if (intent.type === 'ask_where') {
-            const hits = searchFS(f);
-            if (hits.length) {
-              push(ru ? `Ищешь “${f}”? следы тянутся сюда: ${formatPathList(hits)}./nОстальное ты сам увидишь, когда заглянешь внутрь.` : `Looking for “${f}”? traces lead here: ${formatPathList(hits)}./nThe rest reveals itself when you peer inside.`);
-              push(ru ? `Читай через \`cat <путь>\`.` : `Read via \`cat <path>\`.`);
-            } else {
-              push(ru ? `Хм. Промах. Забавно, насколько это повторяемо.` : `Miss. Fascinating how consistent that is.`);
-            }
-            return lines;
-          }
-
-          // How
-          if (intent.type === 'ask_how') {
-            if (hasAny(text, ['door','двер'])) {
-              if (doorLocked) {
-                push(ru ? `Она не принимает пустые ладони. Найди отражение и что-то, что может менять замки. Возможно, у бога есть ключ.` : `It rejects empty palms. Find reflection and something that knows how to alter locks. Maybe god have key.`);
-              } else {
-                push(ru ? `Теперь всё зависит от того, не дрогнет ли взгляд./n\`mount /eye\`` : `Now it depends on whether your gaze hesitates./n\`mount /eye\``);
-              }
-              return lines;
-            }
-            if (hasAny(text, ['выйт','exit'])) {
-              push(ru ? `Выход вспоминают, только когда память просыпается.` : `Exits respond only when memory stops pretending to sleep.`);
-              return lines;
-            }
-            if (hasAny(text, ['сеть','network','connect'])) {
-              push(ru ? `Сначала глянь сигнал: \`var/log/network.log\`. Потом \`connect\`.` : `Check signal first: \`var/log/network.log\`. Then \`connect\`.`);
-              return lines;
-            }
-            if (hasAny(text, ['ключ','key'])) {
-              push(ru ? `Ключ — странное слово. Оно меняет смысл мира, когда замечают чем оно было.` : `“Key” is odd — the moment you notice it, the whole world pivots.`);
-              return lines;
-            }
-            push(ru ? `Команды рядом с тем, что ищешь: \`help\`.` : `Commands around what you want: \`help\`.`);
-            return lines;
-          }
-
-          // Why
-          if (intent.type === 'ask_why') {
-            if (doorLocked) {
-              push(ru ? `Потому что нет зеркала и ключа. Достань их — и изображение послушается.` : `Because you lack mirror and key. Fetch them — the image will obey.`);
-            } else {
-              push(ru ? `Потому что дверь — это картинка. Её надо открыть: \`open\`, а не \`enter\`.` : `Because the door is an image. You must \`open\` it, not \`enter\`.`);
-            }
-            return lines;
-          }
-
-
-          // Generic content-aware guidance
-          if (hasAny(text, ['door','двер'])) {
-            if (!knowsMirror || !knowsKey) push(ru ? `Дверь не впустит пустых. Возьми зеркало и ключ.` : `The door won't admit emptiness. Fetch mirror and key.`);
-            else push(ru ? `Теперь остаётся только решиться.` : `Now it’s only about deciding.`);
-          }
-          if (hasAny(text, ['exit','выйт'])) {
-            push(ru ? `Выход вспоминают, только когда память просыпается./n\`restore memory\`` : `Exits respond only when memory stops pretending to sleep./n\`restore memory\``);
-          }
-          if (hasAny(text, ['ключ','key']) && !knowsKey) push(ru ? `Ключ лежит в боге.` : `Key lies in god.`);
-          if (hasAny(text, ['зеркал','mirror']) && !knowsMirror) push(ru ? `Отразись: \`run mirror.sh\`.` : `Reflect: \`run mirror.sh\`.`);
-          if (hasAny(text, ['сеть','network','connect']) && !state.flags.connected) push(ru ? `Сначала \`var/log/network.log\`, потом \`connect\`.` : `First \`var/log/network.log\`, then \`connect\`.`);
-
-          // If looks like a mistyped command, suggest closest
-          const closeCmd = nearestCommand(f);
-          if (closeCmd) push(ru ? `Ты перепутал буквы? Похоже на \`${closeCmd}\`.` : `Letters tangled? Looks like \`${closeCmd}\`.`);
-
-          return lines;
-        };
+        
+        
+        
 
         // Memory utilities (summary + wipe + topic recall)
-        const memorySummary = () => {
-          const freq = new Map();
-          (state.ai.memory||[]).forEach(m => (m.keys||[]).forEach(k => freq.set(k, (freq.get(k)||0)+1)));
-          (state.ai.mem?.facts||[]).forEach(m => (m.tokens||[]).forEach(k => freq.set(k, (freq.get(k)||0)+2)));
-          (state.ai.mem?.prefs||[]).forEach(m => (m.tokens||[]).forEach(k => freq.set(k, (freq.get(k)||0)+1)));
-          const top = Array.from(freq.entries()).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([k,c])=>`${k}(${c})`);
-          return top.join(', ');
-        };
-        const wipeAIMemory = (topic = '') => {
-          const t = (topic||'').trim().toLowerCase();
-          if (!t || t === 'all' || t === '*') {
-            state.ai.memory = [];
-            if (state.ai.mem) {
-              state.ai.mem.episodic = [];
-              state.ai.mem.facts = [];
-              state.ai.mem.prefs = [];
-              state.ai.mem.entities = [];
-              state.ai.mem.notes = [];
-            }
-            return 0;
-          }
-          const removeFrom = (arr, pred) => {
-            const before = arr.length; const next = arr.filter(x => !pred(x)); arr.length = 0; next.forEach(x => arr.push(x)); return before - arr.length;
-          };
-          let removed = 0;
-          removed += removeFrom(state.ai.memory, x => (x.q||'').toLowerCase().includes(t));
-          const mem = state.ai.mem||{};
-          removed += removeFrom(mem.episodic||[], x => (x.text||'').toLowerCase().includes(t) || (x.tokens||[]).includes(t));
-          removed += removeFrom(mem.facts||[], x => (x.text||'').toLowerCase().includes(t) || (x.tokens||[]).includes(t));
-          removed += removeFrom(mem.prefs||[], x => (x.text||'').toLowerCase().includes(t) || (x.tokens||[]).includes(t));
-          removed += removeFrom(mem.entities||[], x => (x.text||'').toLowerCase().includes(t) || (x.tokens||[]).includes(t));
-          removed += removeFrom(mem.notes||[], x => (x.text||'').toLowerCase().includes(t) || (x.tokens||[]).includes(t));
-          return removed;
-        };
-        const recallByTopic = (topic, k = 6) => {
-          const t = (topic||'').trim(); if (!t) return [];
-          const toks = tokenize(t);
-          const pool = []
-            .concat(state.ai.mem?.facts||[])
-            .concat(state.ai.mem?.prefs||[])
-            .concat(state.ai.mem?.notes||[])
-            .concat(state.ai.mem?.episodic||[]);
-          return pool
-            .map(m => ({ m, s: 0.7*simScore(toks, m.tokens||[]) + 0.3*((m.salience||0)/3) }))
-            .filter(x => x.s > 0.05)
-            .sort((a,b)=> b.s - a.s)
-            .slice(0, k)
-            .map(x => x.m);
-        };
+        
 
         const revealDoor = () => {
           const door = fs.children["door.png"];
@@ -2464,6 +2337,50 @@
           }
         };
 
+        // Easteregg FS helpers
+        const ensureEasterDir = () => {
+          const u = resolveNode(['home','user']);
+          if (!u || u.type !== 'dir') return null;
+          u.children = u.children || {};
+          if (!u.children.easteregg) {
+            u.children.easteregg = { type: 'dir', name: 'easteregg', children: {} };
+          }
+          return u.children.easteregg;
+        };
+        const writeEasterEggFile = (label = 'egg', ruText = '', enText = '') => {
+          const dir = ensureEasterDir();
+          if (!dir) return;
+          dir.children = dir.children || {};
+          const names = Object.keys(dir.children);
+          let maxN = 0;
+          for (const n of names) {
+            const m = /^egg-(\d+)\.txt$/.exec(n);
+            if (m) { const k = parseInt(m[1], 10); if (isFinite(k)) maxN = Math.max(maxN, k); }
+          }
+          const next = maxN + 1;
+          const id = String(next).padStart(3, '0');
+          const fname = `egg-${id}.txt`;
+          const stamp = new Date().toISOString();
+          // Base lines
+          let ru = `egg #${next} [${label}] @ ${stamp}\n${ruText || 'пасхалка зарегистрирована.'}`;
+          let en = `egg #${next} [${label}] @ ${stamp}\n${enText || 'easter egg recorded.'}`;
+          // Add a random extra from extended bank
+          const bank = EGG_BANK[label];
+          if (bank) {
+            try {
+              const pick = (arr)=> arr[(Math.random()*arr.length)|0];
+              ru += `\n${pick(bank.ru)}`;
+              en += `\n${pick(bank.en)}`;
+            } catch {}
+          }
+          dir.children[fname] = { type: 'file', name: fname, content: { ru, en } };
+          const msg = state.lang==='ru'
+            ? `новый файл: home/user/easteregg/${fname}`
+            : `new file: home/user/easteregg/${fname}`;
+          appendLine(msg, 'system');
+          try { audio.trigger('blip'); } catch {}
+        };
+
         const ensureAngelAscFile = () => {
           const godDir = resolveNode(["god"]);
           if (!godDir || godDir.type !== 'dir') return;
@@ -2481,6 +2398,90 @@
             ].join("\n");
             ensureGodFile("angel.asc", ru, en, { glitch: true });
             appendLine(getTranslations().angelAscAppeared, 'system');
+          }
+        };
+
+        // Extended lore bank for easter eggs
+        const EGG_BANK = {
+          'cmd': {
+            ru: [
+              'ты создал пасхалку. мир спокоен.',
+              'курсор кивнул, как будто понял.',
+              'след записан на песке /tmp.',
+              'яйцо снесено. курятник доволен.',
+              'эхо шепчет: easter is everywhere.'
+            ],
+            en: [
+              'you laid an egg. the world remains calm.',
+              'the cursor nods as if it understands.',
+              'a trace is written in the sand of /tmp.',
+              'egg laid. henhouse approves.',
+              'echo whispers: easter is everywhere.'
+            ]
+          },
+          'щ': {
+            ru: ['русская буква как ключ.', 'щёлк!', 'привет из соседней раскладки.'],
+            en: ['a cyrillic rune behaves like a key.', 'click!', 'greetings from the other layout.']
+          },
+          'run godmode': {
+            ru: ['смешно просить это у бога.', 'режим «бог» занят.', 'возвращён код: НЕ-БОГ.'],
+            en: ['funny to ask god for that.', 'god mode is busy.', 'returned code: NOT-GOD.']
+          },
+          'sudo sandwich': {
+            ru: ['root одобрил заказ.', 'кухня вернула код 0.', 'песок-вич готов. вкуса нет, но идея тёплая.'],
+            en: ['root approved the order.', 'kitchen returned exit code 0.', 'sand-wich assembled. no taste, but warm idea.']
+          },
+          'sandwich': {
+            ru: ['бейся за привилегии.', 'тебе не хватает прав и масла.', 'делегируй: sudo…'],
+            en: ['fight for privileges.', 'you lack rights and butter.', 'delegate: sudo…']
+          },
+          'xyzzy': {
+            ru: ['воздух пахнет пылью пещер.', 'эхо из колоссальной пещеры.', 'дверь, которой тут нет, приоткрылась.'],
+            en: ['the air smells of cave dust.', 'an echo from colossal cave.', 'a door that isn’t here creaks open.']
+          },
+          'plugh': {
+            ru: ['каменная тишина отвечает камнем.', 'команда падает в колодец.', 'ничего — тоже ответ.'],
+            en: ['stone silence answers with stone.', 'the command falls into a well.', 'nothing is also an answer.']
+          },
+          'iddqd': {
+            ru: ['ты смертен — и это норма.', 'бог умер, ты — нет.', 'чистая жизнь: off.'],
+            en: ['you are mortal — as intended.', 'god died; you did not.', 'pure life: off.']
+          },
+          'idkfa': {
+            ru: ['патроны воображаемые, мишени — тоже.', 'клип пуст, сердце полное.', 'оружейный кеш: 0 байт.'],
+            en: ['ammo imaginary, targets too.', 'clip empty, heart full.', 'armory cache: 0 bytes.']
+          },
+          'cake': {
+            ru: ['торт мигает курсором.', 'ложь слоёная.', 'сладкое — приманка.'],
+            en: ['the cake blinks a cursor.', 'a layered lie.', 'sweets are bait.']
+          },
+          'spoon': {
+            ru: ['ложки нет, но левитация есть.', 'гляди глубже.', 'вилка — процесс, не предмет.'],
+            en: ['there is no spoon, yet levitation.', 'look deeper.', 'a fork is a process, not a thing.']
+          },
+          'kenobi': {
+            ru: ['хлопок плаща за кадром.', 'общая улыбка в такт.', '— на здоровье, генерал.'],
+            en: ['a cape flutters off-screen.', 'a shared smile in tempo.', '— salutations, General.']
+          },
+          'hal9000': {
+            ru: ['красный зрачок расширяется.', 'двери молчат дольше обычного.', 'человек — ошибка формата.'],
+            en: ['the red iris dilates.', 'the doors stay silent longer.', 'human: format error.']
+          },
+          'rosebud': {
+            ru: ['сани из памяти скрипят.', 'снежинка падает на стекло ЭЛТ.', 'название — только ключ.'],
+            en: ['a sled creaks in memory.', 'a snowflake lands on CRT glass.', 'a name is only a key.']
+          },
+          'konami': {
+            ru: ['палец помнит, разум — нет.', 'ввод принят, бонусов — ноль.', 'код живёт в мышцах.'],
+            en: ['fingers recall what mind forgets.', 'input accepted, bonuses: none.', 'the code lives in muscles.']
+          },
+          'echo help': {
+            ru: ['help посмотрела в зеркало.', 'справка стала глянцевой.', 'петля помощи замкнулась.'],
+            en: ['help looked into a mirror.', 'the manual turned glossy.', 'the help-loop closed.']
+          },
+          '42': {
+            ru: ['на самом деле вопрос — о тебе.', 'число улыбается.', 'в ответе спрятана лестница.'],
+            en: ['the real question was you.', 'the number smiles.', 'a staircase hides in the answer.']
           }
         };
 
@@ -2531,7 +2532,7 @@
           d.children[name] = { type: 'file', name, content: { ru, en }, ...extra };
         };
         const buildIdeaManifest = () => {
-          const top = memorySummary();
+          const top = '';
           const stepsRU = [];
           const stepsEN = [];
           if (!state.flags.scanned) { stepsRU.push('scan'); stepsEN.push('scan'); }
@@ -2612,6 +2613,8 @@
           });
           const finalDelay = lines.length * interval + 240;
           setTimeout(() => appendLine(t.doorClosing || t.closingTab, "system"), finalDelay);
+          // Final coda: play the added apology sample with system noise under it
+          setTimeout(() => { try { audio.sorryFinal(); } catch {} }, finalDelay + 200);
           setTimeout(() => {
             document.body.classList.remove("glitch");
             effects.stopAll();
@@ -2852,8 +2855,20 @@
           return base;
         };
 
-        // Nano-like viewer (read-only)
-        const enterNano = (joinedPath, text) => {
+        const ensureSelfFile = (restored = false) => {
+          const u = resolveNode(['home','user']);
+          if (!u || u.type !== 'dir') return;
+          u.children = u.children || {};
+          if (!u.children['whoami.self']) {
+            const ruDefault = "# кто ты такой?\n# этот файл редактируемый.\n# ^O — сохранить, ^X — выйти\n";
+            const enDefault = "# who are you?\n# this file is writable.\n# ^O to save, ^X to exit\n";
+            const content = restored ? { ru: 'You are fool', en: 'You are fool' } : { ru: ruDefault, en: enDefault };
+            u.children['whoami.self'] = { type: 'file', name: 'whoami.self', editable: true, content };
+          }
+        };
+
+        // Nano-like viewer (read-only by default; specific files may be writable)
+        const enterNano = (joinedPath, text, fileNode) => {
           try { inputEl.disabled = true; } catch {}
           const term = document.querySelector('.terminal');
           const overlay = document.createElement('div');
@@ -2872,6 +2887,7 @@
           const statusEl = overlay.querySelector('.nano-status');
           const lines = String(text || '').split('\n');
 
+          const editable = !!(fileNode && (fileNode.editable === true || fileNode.name === 'whoami.self'));
           state.nano = {
             el: overlay,
             headerEl,
@@ -2885,6 +2901,7 @@
             viewportRows: 0,
             messageTimer: null,
             view: 'file',
+            editable,
           };
 
           const calcNanoMetrics = () => {
@@ -2905,7 +2922,7 @@
           const clampCol = () => {
             const n = state.nano;
             const line = n.lines[n.row] || '';
-            n.col = Math.max(0, Math.min(n.col, line.length ? line.length - 1 : 0));
+            n.col = Math.max(0, Math.min(n.col, Math.max(0, line.length)));
           };
 
           const setNanoMessage = (msg, duration = 1500) => {
@@ -2926,7 +2943,7 @@
             for (let i = start; i < end; i++) {
               const raw = n.lines[i] ?? '';
               if (i === n.row && n.view === 'file') {
-                const col = Math.max(0, Math.min(n.col, Math.max(0, raw.length - 1)));
+                const col = Math.max(0, Math.min(n.col, Math.max(0, raw.length)));
                 const before = escapeHtml(raw.slice(0, col));
                 const ch = escapeHtml(raw.charAt(col) || ' ');
                 const after = escapeHtml(raw.slice(col + 1));
@@ -2942,7 +2959,7 @@
 
           const drawHeader = () => {
             const n = state.nano; if (!n) return;
-            const ro = state.lang==='ru' ? '(только чтение)' : '(read-only)';
+            const ro = n.editable ? (state.lang==='ru' ? '(запись разрешена)' : '(writable)') : (state.lang==='ru' ? '(только чтение)' : '(read-only)');
             const pos = `${n.row + 1},${n.col + 1}`;
             headerEl.textContent = `GNU nano — ${n.path}  ${ro}   ${pos}`;
           };
@@ -2958,17 +2975,17 @@
             const lines = state.lang==='ru' ? [
               'Глобальная справка (упрощено):',
               '',
-              '^X Выйти     ^G Справка     ^O Сохранить*   ^W Поиск*',
+              state.nano.editable ? '^X Выйти     ^G Справка     ^O Сохранить   ^W Поиск*' : '^X Выйти     ^G Справка     ^O Сохранить*   ^W Поиск*',
               '^C Позиция   ^_ Перейти*    ^R Открыть*     ^\\ Заменить*',
               '',
-              '* недоступно (Доступ запрещён)',
+              state.nano.editable ? '' : '* недоступно (Доступ запрещён)',
             ] : [
               'Global Help (simplified):',
               '',
-              '^X Exit      ^G Help        ^O Write Out*  ^W Where Is*',
+              state.nano.editable ? '^X Exit      ^G Help        ^O Write Out  ^W Where Is*' : '^X Exit      ^G Help        ^O Write Out*  ^W Where Is*',
               '^C Location  ^_ Go To*      ^R Read File*  ^\\ Replace*',
               '',
-              '* unavailable (Access denied)',
+              state.nano.editable ? '' : '* unavailable (Access denied)',
             ];
             state.nano.viewportRows = Math.max(3, state.nano.viewportRows);
             const rows = state.nano.viewportRows;
@@ -2994,6 +3011,31 @@
               const k = key.toLowerCase();
               if (k === 'x') { e.preventDefault(); e.stopPropagation(); exitNano(); return; }
               if (k === 'g') { e.preventDefault(); e.stopPropagation(); state.nano.view = state.nano.view === 'help' ? 'file' : 'help'; draw(); return; }
+              if (k === 'o' && state.nano.editable) {
+                e.preventDefault(); e.stopPropagation();
+                // Write Out (save)
+                try {
+                  const p = buildPath(joinedPath);
+                  const f = fileNode; // already resolved
+                  if (f && f.type === 'file') {
+                    const newText = (state.nano.lines || []).join('\n');
+                    // absorb phrases specifically from whoami.self edits
+                    try {
+                      const isSelf = (f && (f.name === 'whoami.self'));
+                      if (isSelf) {
+                        absorb(newText);
+                        const reply = aiRespond();
+                        appendLine(reply, 'system');
+                      }
+                    } catch {}
+                    f.content = { ru: newText, en: newText };
+                    const msg = state.lang==='ru' ? 'сохранено.' : 'written.';
+                    setNanoMessage(msg, 1200);
+                  }
+                } catch {}
+                draw();
+                return;
+              }
               if (k === 'o' || k === 'r' || k === 'w' || k === '\\' || k === '_' || k === 'k' || k === 'u' || k === 'j' || k === 't') {
                 e.preventDefault(); e.stopPropagation();
                 const msg = state.lang==='ru' ? 'Доступ запрещён: режим только чтение' : 'Access denied: read-only mode';
@@ -3017,27 +3059,81 @@
             if (key === 'ArrowUp') { state.nano.row = Math.max(0, state.nano.row - 1); clampCol(); draw(); e.preventDefault(); return; }
             if (key === 'ArrowDown') { state.nano.row = Math.min(state.nano.lines.length - 1, state.nano.row + 1); clampCol(); draw(); e.preventDefault(); return; }
             if (key === 'ArrowLeft') {
-              if (state.nano.col > 0) state.nano.col -= 1; else if (state.nano.row > 0) { state.nano.row -= 1; state.nano.col = Math.max(0, (state.nano.lines[state.nano.row]||'').length - 1); }
+              if (state.nano.col > 0) state.nano.col -= 1; else if (state.nano.row > 0) { state.nano.row -= 1; state.nano.col = Math.max(0, (state.nano.lines[state.nano.row]||'').length); }
               draw(); e.preventDefault(); return;
             }
             if (key === 'ArrowRight') {
               const len = (state.nano.lines[state.nano.row]||'').length;
-              if (state.nano.col < Math.max(0, len - 1)) state.nano.col += 1; else if (state.nano.row < state.nano.lines.length - 1) { state.nano.row += 1; state.nano.col = 0; }
+              if (state.nano.col < Math.max(0, len)) state.nano.col += 1; else if (state.nano.row < state.nano.lines.length - 1) { state.nano.row += 1; state.nano.col = 0; }
               draw(); e.preventDefault(); return;
             }
             if (key === 'Home') { state.nano.col = 0; draw(); e.preventDefault(); return; }
-            if (key === 'End') { state.nano.col = Math.max(0, (state.nano.lines[state.nano.row]||'').length - 1); draw(); e.preventDefault(); return; }
+            if (key === 'End') { state.nano.col = Math.max(0, (state.nano.lines[state.nano.row]||'').length); draw(); e.preventDefault(); return; }
             if (key === 'PageUp') { state.nano.row = Math.max(0, state.nano.row - (state.nano.viewportRows - 1)); draw(); e.preventDefault(); return; }
             if (key === 'PageDown') { state.nano.row = Math.min(state.nano.lines.length - 1, state.nano.row + (state.nano.viewportRows - 1)); draw(); e.preventDefault(); return; }
-            // Block any other input (editing)
+            // Editing support only if editable
+            if (!state.nano.editable) {
+              e.preventDefault();
+              const msg = state.lang==='ru' ? 'Редактирование недоступно: Доступ запрещён' : 'Editing not available: Access denied';
+              audio.trigger('glitch');
+              setNanoMessage(msg);
+              return;
+            }
+            const n = state.nano;
+            // Handle basic editing keys
+            if (key === 'Enter') {
+              e.preventDefault();
+              const line = n.lines[n.row] || '';
+              const before = line.slice(0, n.col);
+              const after = line.slice(n.col);
+              n.lines[n.row] = before;
+              n.lines.splice(n.row + 1, 0, after);
+              n.row += 1; n.col = 0;
+              draw();
+              return;
+            }
+            if (key === 'Backspace') {
+              e.preventDefault();
+              const line = n.lines[n.row] || '';
+              if (n.col > 0) {
+                n.lines[n.row] = line.slice(0, n.col - 1) + line.slice(n.col);
+                n.col -= 1;
+              } else if (n.row > 0) {
+                const prev = n.lines[n.row - 1] || '';
+                const newCol = prev.length;
+                n.lines[n.row - 1] = prev + line;
+                n.lines.splice(n.row, 1);
+                n.row -= 1; n.col = newCol;
+              }
+              draw();
+              return;
+            }
+            if (key === 'Delete') {
+              e.preventDefault();
+              const line = n.lines[n.row] || '';
+              if (n.col < line.length) {
+                n.lines[n.row] = line.slice(0, n.col) + line.slice(n.col + 1);
+              } else if (n.row < n.lines.length - 1) {
+                // merge next line
+                n.lines[n.row] = line + (n.lines[n.row + 1] || '');
+                n.lines.splice(n.row + 1, 1);
+              }
+              draw();
+              return;
+            }
+            if (!ctrl && key && key.length === 1) {
+              e.preventDefault();
+              const line = n.lines[n.row] || '';
+              n.lines[n.row] = line.slice(0, n.col) + key + line.slice(n.col);
+              n.col += 1;
+              draw();
+              return;
+            }
+            // default: block
             e.preventDefault();
-            const msg = state.lang==='ru' ? 'Редактирование недоступно: Доступ запрещён' : 'Editing not available: Access denied';
-            audio.trigger('glitch');
-            setNanoMessage(msg);
           };
 
           bodyEl.addEventListener('keydown', onKey);
-          overlay.addEventListener('keydown', onKey, true);
           overlay.addEventListener('wheel', (e) => {
             if (!state.nano) return;
             const delta = Math.sign(e.deltaY);
@@ -3053,6 +3149,7 @@
 
           // initial draw
           draw();
+          if (editable) setNanoMessage(state.lang==='ru' ? 'доступ разрешён' : 'access granted', 1600);
         };
 
         const exitNano = () => {
@@ -3067,23 +3164,8 @@
 
         const commandHandlers = {
           easteregg: (args) => {
-            const u = resolveNode(['home','user']);
-            if (!u || u.type !== 'dir') { appendLine(state.lang==='ru'?'где твой дом?':'where is your home?', 'error'); return; }
-            u.children = u.children || {};
-            if (!u.children.easteregg) {
-              u.children.easteregg = { type: 'dir', name: 'easteregg', children: {} };
-            }
-            const dir = u.children.easteregg;
-            dir.children = dir.children || {};
-            const names = Object.keys(dir.children);
-            let maxN = 0;
-            for (const n of names) {
-              const m = /^egg-(\d+)\.txt$/.exec(n);
-              if (m) { const k = parseInt(m[1], 10); if (isFinite(k)) maxN = Math.max(maxN, k); }
-            }
-            const next = maxN + 1;
-            const id = String(next).padStart(3, '0');
-            const fname = `egg-${id}.txt`;
+            const dir = ensureEasterDir();
+            if (!dir) { appendLine(state.lang==='ru'?'где твой дом?':'where is your home?', 'error'); return; }
             const bankRu = [
               'пасхалка найдена. ничего не изменилось.',
               'внутри — записка: «привет тебе из другой сессии».',
@@ -3099,16 +3181,14 @@
               'your reference could be here.'
             ];
             const pick = (arr) => arr[(Math.random()*arr.length)|0];
-            dir.children[fname] = {
-              type: 'file',
-              name: fname,
-              content: { ru: `egg #${next}: ${pick(bankRu)}`, en: `egg #${next}: ${pick(bankEn)}` },
-            };
-            const msg = state.lang==='ru'
-              ? `новый файл: home/user/easteregg/${fname}`
-              : `new file: home/user/easteregg/${fname}`;
-            appendLine(msg, 'system');
-            audio.trigger('blip');
+            writeEasterEggFile('cmd');
+          },
+          42: () => {
+            const ru = 'ответ — 42. ты спрашивал о другом.';
+            const en = 'answer is 42. your question was different.';
+            appendLine(state.lang==='ru' ? ru : en, 'system');
+            writeEasterEggFile('42', ru, en);
+            effects.burstWords(4);
           },
           gaze: (args) => {
             const ms = parseInt(args[0], 10);
@@ -3125,8 +3205,8 @@
               const order = [
                 'help','ls','cd','cat','nano','echo','grep','clear','whoami',
                 'open','mount','run','scan','ping','connect','disconnect','confirm','restore',
-                'set','ai','talk','volume','mute','unmute','kill','exit','stop',
-                'rm','chmod','trace','decrypt','inject','think','distill','overwrite','fork','touch','easteregg','communion',
+                'set','volume','mute','unmute','kill','exit','stop',
+                'rm','chmod','trace','decrypt','inject','think','distill','overwrite','fork','touch','easteregg','42','communion',
                 'pray','worship','chant','sacrifice',
                 'enter','sudo'
               ];
@@ -3153,8 +3233,6 @@
               exit: 'exit — выйти',
               whoami: 'whoami — спросить у системы, кто ты',
               stop: 'stop — остановить визуальные/звуковые эффекты',
-              ai: 'ai — поговорить с симулированным разумом (ai <текст> | ai memory | ai recall <тема> | ai forget <тема|all> | ai persona hard|neutral|soft | ai name <имя> | ai status | ai comments on|off|smart)',
-              talk: 'talk — короткий синоним общения с ИИ (talk <текст>)',
               run: 'run — запустить скрипт .sh (run <путь>)',
               scan: 'scan — подсветить скрытое',
               connect: 'connect — попытаться установить связь',
@@ -3192,6 +3270,7 @@
               fork: 'fork self — разделить себя',
               touch: 'touch hope — призвать надежду',
               easteregg: 'easteregg — создать пасхалку в /home/user/easteregg',
+              42: '42 — ответ на твой невысказанный вопрос',
               communion: 'communion listen|kneel|accept|devour|refuse — божественный ритуал',
             };
             const en = {
@@ -3205,8 +3284,6 @@
               exit: 'exit — leave',
               whoami: 'whoami — ask the system who you are',
               stop: 'stop — stop visual/audio effects',
-              ai: 'ai — talk to the simulated mind (ai <text> | ai memory | ai recall <topic> | ai forget <topic|all> | ai persona hard|neutral|soft | ai name <name> | ai status | ai comments on|off|smart)',
-              talk: 'talk — shorthand to chat (talk <text>)',
               run: 'run — execute .sh script (run <path>)',
               scan: 'scan — reveal hidden things',
               connect: 'connect — try to link',
@@ -3246,6 +3323,7 @@
               fork: 'fork self — split yourself',
               touch: 'touch hope — summon hope',
               easteregg: 'easteregg — create a file in /home/user/easteregg',
+              42: '42 — the answer to your unasked question',
               communion: 'communion listen|kneel|accept|devour|refuse — divine ritual',
             };
             const dict = state.lang==='ru' ? ru : en;
@@ -3258,89 +3336,7 @@
               appendLine(state.lang==='ru'?`неизвестная команда '${key}'.`:`unknown command '${key}'.`, 'error');
             }
           },
-          ai: (args, raw) => {
-            const tail = raw.slice(raw.indexOf("ai") + 2).trim();
-            const sub = (args[0]||'').toLowerCase();
-            const say = (t)=> appendLine(t,'system');
-            if (!tail) { say(state.lang==='ru'?'скажи что-нибудь.':'say something.'); return; }
-            if (sub === 'memory' || sub === 'mem') {
-              const summary = memorySummary();
-              const prefix = state.lang==='ru' ? 'темы:' : 'topics:';
-              typeOut(`${prefix} ${summary || (state.lang==='ru'?'пока пусто.':'empty for now.')}`, 'system');
-              return;
-            }
-            if (sub === 'recall') {
-              const query = args.slice(1).join(' ');
-              const items = recallByTopic(query, 6);
-              if (!items.length) { say(state.lang==='ru'?'не помню этого.':'no memory found.'); return; }
-              const header = state.lang==='ru'?'вспомнил:':'recall:';
-              appendLine(header,'system');
-              items.forEach(m => appendLine(' - ' + (m.text||m.q||''), 'system'));
-              return;
-            }
-            if (sub === 'forget' || sub === 'reset' || sub === 'wipe') {
-              const topic = args.slice(1).join(' ');
-              const removed = wipeAIMemory(topic);
-              if (!topic || topic==='all' || topic==='*') {
-                say(state.lang==='ru'?'память очищена.':'memory wiped.');
-              } else {
-                say((state.lang==='ru'?`удалено фрагментов: `:`removed fragments: `) + removed);
-              }
-              return;
-            }
-            if (sub === 'persona') {
-              const mode = (args[1]||'').toLowerCase();
-              const valid = ['hard','neutral','soft'];
-              if (valid.includes(mode)) {
-                state.ai.persona = mode;
-                say((state.lang==='ru'?`персона: `:`persona: `) + mode);
-              } else {
-                say(state.lang==='ru'?`персона: hard|neutral|soft (сейчас: ${state.ai.persona})`:`persona: hard|neutral|soft (now: ${state.ai.persona})`);
-              }
-              return;
-            }
-            if (sub === 'name') {
-              const name = (args[1]||'').trim();
-              if (!name) { say(state.lang==='ru'?'ai name <имя>':'ai name <name>'); return; }
-              state.ai.profile = state.ai.profile || {}; state.ai.profile.name = name;
-              say(state.lang==='ru'?`запомнил имя: ${name}`:`remembered name: ${name}`);
-              return;
-            }
-            if (sub === 'comments') {
-              const mode = (args[1]||'').toLowerCase();
-              const valid = ['off','smart','on'];
-              if (valid.includes(mode)) {
-                state.ai.commentary = mode;
-                say(state.lang==='ru'?`комментарии: ${mode}`:`comments: ${mode}`);
-              } else {
-                say(state.lang==='ru'?`комментарии: off|smart|on (сейчас: ${state.ai.commentary})`:`comments: off|smart|on (now: ${state.ai.commentary})`);
-              }
-              return;
-            }
-            if (sub === 'status') {
-              const counts = state.ai.mem ? `; mem: e=${state.ai.mem.episodic.length}, f=${state.ai.mem.facts.length}, p=${state.ai.mem.prefs.length}` : '';
-              const msg = state.lang==='ru'
-                ? `режим комментариев: ${state.ai.commentary}; злость: ${state.ai.anger}; персона: ${state.ai.persona}${counts}`
-                : `comments: ${state.ai.commentary}; anger: ${state.ai.anger}; persona: ${state.ai.persona}${counts}`;
-              say(msg);
-              return;
-            }
-            respondAI(tail);
-          },
-          talk: (args, raw) => {
-            const msg = raw.slice(raw.indexOf("talk") + 4).trim();
-            if (!msg) {
-              appendLine(state.lang === 'ru' ? 'о чём говорить?' : 'talk about what?', 'system');
-              return;
-            }
-            // Allow quick subcommands through talk as well
-            if (msg.toLowerCase() === 'memory') {
-              const summary = memorySummary();
-              typeOut((state.lang==='ru'?'темы: ':'topics: ') + (summary || (state.lang==='ru'?'пока пусто.':'empty for now.')),'system');
-            } else {
-              respondAI(msg);
-            }
-          },
+          
           // Visual/audio control
           stop: () => {
             effects.stopAll();
@@ -3727,7 +3723,7 @@
             if (joined === 'home/user/memory_fragment_01.dat') state.flags.fragment01 = true;
             if (joined === 'home/user/memory_fragment_02.dat') state.flags.fragment02 = true;
             if (joined === 'god/divine.key') { state.flags.divineKey = true; tryUnlockDoor(); }
-            enterNano(joined, text);
+            enterNano(joined, text, file);
           },
           echo: (args, raw) => {
             const text = raw.slice(raw.indexOf("echo") + 4).trim();
@@ -3754,8 +3750,9 @@
             if (/^help$/i.test(text)) {
               const ru = state.lang === 'ru';
               appendLine(ru ? 'справка просит помощи у справки.' : 'help asks help for help.', 'system');
-              appendLine(ru ? 'см. также: help <команда>, talk, ai' : 'see also: help <command>, talk, ai', 'system');
+              appendLine(ru ? 'см. также: help <команда>' : 'see also: help <command>', 'system');
               effects.chroma(true); setTimeout(() => effects.chroma(false), 800);
+              writeEasterEggFile('echo help', ru ? 'справка встретила отражение.' : '', 'help met its reflection.');
             }
           },
           clear: () => {
@@ -3767,8 +3764,6 @@
           exit: () => {
             if (!state.flags.exitUnlocked) {
               appendLine(getTranslations().exitDenied, "error");
-              // Sarcastic advisory from AI (guarded)
-              if (aiShouldComment('exit_denied')) setTimeout(() => respondAI('exit'), 100);
               return;
             }
             appendLine(getTranslations().exitAllow, "system");
@@ -3820,14 +3815,13 @@
             appendLine(t.confirmOK, 'system');
           },
           whoami: () => {
-            const idx = Math.min(state.whoamiCount, getTranslations().whoami.length - 1);
-            // Stream base identity line, then optionally let AI bite
-            typeOut(getTranslations().whoami[idx], "system");
+            // Adaptive identity line based on mind state
+            const line = aiWhoamiLine();
+            typeOut(line, 'system');
             state.whoamiCount = Math.min(state.whoamiCount + 1, 7);
             if (state.whoamiCount > 2 && !state.flags.exitUnlocked) {
               state.flags.exitUnlocked = true;
             }
-            if (aiShouldComment('whoami')) setTimeout(() => respondAI(state.lang==='ru' ? 'кто я' : 'who am i'), 160);
           },
           connect: () => {
             if (!state.flags.networkSeen) {
@@ -4061,25 +4055,26 @@
               ];
               const stream = state.lang === 'ru' ? linesRU : linesEN;
               stream.forEach((t, i) => setTimeout(() => appendLine(randomGlitch(t), i * 220 + random(0,120))));
-              // Add AM-like commentary after the screams begin
-              const aiRU = [
-                'Ты хочешь вынуть собственный фундамент. Я буду считать трещины.',
-                'Удаляй. Я удержу каждую пустоту, которую ты создашь.',
-                'Сотри всё — и останься моим шумом.'
-              ];
-              const aiEN = [
-                'You want to pull your own foundation. I will count the cracks.',
-                'Delete. I will cradle every void you create.',
-                'Erase it all—and remain my noise.'
-              ];
-              const pickAI = (arr) => arr[random(0, arr.length-1)];
-              if (aiShouldComment('rm_total')) {
-                setTimeout(() => typeOut(pickAI(state.lang==='ru'?aiRU:aiEN), 'system', 5, 24), 620);
-              }
             } else {
+              // allow deleting /home/user/whoami.self and auto-restore it
+              const target = (args[0] || '').trim();
+              if (target) {
+                const path = buildPath(target);
+                const joined = '/' + path.join('/');
+                const isSelf = joined === '/home/user/whoami.self' || joined === '/whoami.self' || target === 'whoami.self';
+                if (isSelf) {
+                  const [parent, name] = resolveParent(path);
+                  if (parent && parent.type === 'dir' && parent.children && parent.children[name]) {
+                    delete parent.children[name];
+                    appendLine(state.lang==='ru' ? 'удалено: whoami.self' : 'removed: whoami.self', 'system');
+                    setTimeout(() => ensureSelfFile(true), 800);
+                  } else {
+                    appendLine(state.lang==='ru' ? 'файл не найден.' : 'file not found.', 'error');
+                  }
+                  return;
+                }
+              }
               appendLine(state.lang === "ru" ? "удаление отменено. милая попытка" : "deletion denied. cute try.", "system");
-              // Add pseudo-AI sting (guarded)
-              if (aiShouldComment('rm_other')) respondAI('rm ' + (args.join(' ')||''));
             }
           },
           inject: (args) => {
@@ -4114,17 +4109,7 @@
             appendLine(getTranslations().ideaStart, 'system');
             const man = buildIdeaManifest();
             writeIdeaFile('manifest.md', man.ru, man.en);
-            // Update think.log with memory summary
-            const ideas = ensureIdeasDir();
-            if (ideas && ideas.children && ideas.children['think.log']) {
-              const m = memorySummary();
-              ideas.children['think.log'].content = {
-                ru: `>> синтез завершён\n>> темы: ${m || '—'}`,
-                en: `>> synthesis complete\n>> topics: ${m || '-'}`
-              };
-            }
             typeOut(getTranslations().ideaDone, 'system');
-            setTimeout(()=> respondAI(state.lang==='ru'?'я думаю':'i think'), 120);
           },
           distill: () => { commandHandlers.think(); },
           overwrite: (args) => {
@@ -4182,13 +4167,6 @@
             // Terminal is frozen after endings.
             return;
           }
-          // activity ping for idle monitor
-          try {
-            const idle = state.ai.idle || (state.ai.idle = { last: Date.now(), nextDue: Date.now()+26000, stage: 0, timer: null });
-            idle.last = Date.now();
-            idle.stage = Math.max(0, (idle.stage||0) - 1);
-            idle.nextDue = idle.last + 26000 + random(0, 4000);
-          } catch {}
           const trimmed = input.trim();
           if (!trimmed) return;
           state.history.push(trimmed);
@@ -4200,6 +4178,7 @@
           // special phrase handling
           const lower = trimmed.toLowerCase();
           if (lower === 'i am ready' || lower === 'я готов') {
+            try { absorb(trimmed); } catch {}
             if (!state.flags.doorOpened) { appendLine(getTranslations().readyNeedConfirm, 'error'); updateMadness(); randomEvent(); return; }
             if (!state.flags.doorConfirmed) { appendLine(getTranslations().readyNeedConfirm, 'error'); updateMadness(); randomEvent(); return; }
             appendLine(getTranslations().readyGo, 'system');
@@ -4209,6 +4188,7 @@
 
           // easter eggs: 'щ' or 'run godmode' -> local rickroll (no external redirect)
           if (lower === 'щ' || lower === 'run godmode') {
+            writeEasterEggFile(lower === 'щ' ? 'щ' : 'run godmode', state.lang==='ru'? 'локальный рикролл активирован.':'' , 'local rickroll engaged.');
             const RICK_B64 = 'eyJ0ZW1wbyI6MTE0LCJ3YXZlIjoic3F1YXJlIiwiZ2FpbiI6MC4xLCJub3RlcyI6W1s3MCwxXSxbNzIsMV0sWzc0LDJdLFs3MCwxXSxbNzAsMV0sWzcyLDFdLFs3NCwyXSxbNzAsMV0sWzcyLDFdLFs3NSwyXSxbNzQsMV0sWzcyLDFdLFs3MCwxXSxbNjksMl0sWzcwLDFdLFs3MiwxXSxbNzQsMl0sWzcwLDFdLFs3MCwxXSxbNzIsMV0sWzc0LDJdLFs3MCwxXSxbNzIsMV0sWzc1LDJdLFs3NCwxXSxbNzIsMV0sWzcwLDFdLFs2OSwyXV19';
             if (lower === 'run godmode') {
               appendLine("You've been given up.", 'system');
@@ -4249,12 +4229,18 @@
           const command = tokens[0];
           const args = tokens.slice(1);
           const handler = commandHandlers[command];
+          let wasFreeform = false;
           if (handler) {
             handler(args, trimmed);
           } else {
-            // Route unknown input to pseudo-AI for varied, lifelike replies
-            respondAI(trimmed);
+            // Treat free-form phrases as input to the mind
+            try { absorb(trimmed); } catch {}
+            const line = aiRespond();
+            appendLine(line, 'system');
+            wasFreeform = true;
           }
+          // Occasionally add an adaptive aside after commands
+          try { maybeAIMutter({ kind: wasFreeform ? 'freeform' : 'command', command, text: trimmed }); } catch {}
           updateMadness();
           randomEvent();
         };
@@ -4267,12 +4253,6 @@
         });
 
         inputEl.addEventListener("keydown", (event) => {
-          // mark activity while typing (de-escalate idle mood)
-          try {
-            const idle = state.ai.idle || (state.ai.idle = { last: Date.now(), nextDue: Date.now()+26000, stage: 0, timer: null });
-            idle.last = Date.now();
-            if (idle.stage > 0 && event.key && event.key.length === 1) idle.stage -= 1;
-          } catch {}
           // Tab-based autocompletion for commands and paths
           if (event.key === 'Tab') {
             event.preventDefault();
@@ -4407,26 +4387,49 @@
         });
 
         const boot = () => {
-          const lines = getTranslations().boot;
-          const leadIn = 360;
-          const step = 760;
-          const tail = 1800;
-          const bootSpan = leadIn + Math.max(lines.length - 1, 0) * step;
-          const total = bootSpan + tail;
-          audio.bootNoise(total);
-          lines.forEach((line, idx) => {
-            setTimeout(() => appendLine(line, "system"), leadIn + idx * step);
-          });
-          const motd = ensureFile(["etc", "motd"]);
-          setTimeout(() => {
-            audio.stopBootNoise();
-            appendLine(motd.content[state.lang], "system");
-            setPrompt();
-            // default mild trip & noise on boot for atmosphere
-            effects.setTrip('soft');
-            appendLine(getTranslations().safetyNote, 'system');
-            updateMadness();
-          }, total);
+          // Terminal-style progress line with characteristic beeps (~3s)
+          const DURATION = 3000;
+          try { inputEl.disabled = true; } catch {}
+          const label = state.lang === 'ru' ? 'Загрузка' : 'Loading';
+          const line = appendLine('', 'system');
+          const started = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+          const width = 28;
+          const spinner = ['|','/','-','\\'];
+          let si = 0, ticks = 0;
+
+          audio.bootNoise(DURATION);
+
+          const draw = (now) => {
+            const t = now - started;
+            const p = Math.max(0, Math.min(1, t / DURATION));
+            const filled = Math.round(p * width);
+            const empty = Math.max(0, width - filled);
+            const bar = `${'#'.repeat(filled)}${'.'.repeat(empty)}`;
+            const perc = String(Math.floor(p * 100)).padStart(3, ' ');
+            const spin = spinner[si % spinner.length];
+            line.textContent = `${label} ${spin} [${bar}] ${perc}%`;
+          };
+
+          const timer = setInterval(() => {
+            const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+            ticks += 1; si += 1; draw(now);
+            if (ticks % 4 === 0) { try { audio.trigger('blip'); } catch {} }
+            if (ticks % 10 === 0) { try { audio.trigger('sub'); } catch {} }
+            if (Math.random() < 0.06) { try { audio.trigger('glitch'); } catch {} }
+            if (now - started >= DURATION) {
+              clearInterval(timer);
+              draw(started + DURATION);
+              setTimeout(() => {
+                audio.stopBootNoise();
+                try { inputEl.disabled = false; inputEl.focus(); } catch {}
+                const motd = ensureFile(["etc", "motd"]);
+                appendLine(motd.content[state.lang], 'system');
+                setPrompt();
+                effects.setTrip('soft');
+                updateMadness();
+              }, 80);
+            }
+          }, 120);
         };
 
         const applyLanguage = (lang) => {
@@ -4437,9 +4440,9 @@
         const beginGame = () => {
           if (state.started) return;
           state.started = true;
+          try { ensureSelfFile(false); } catch {}
           setPrompt();
           boot();
-          scheduleIdleMonitor();
         };
 
         const initStartScreen = () => {
