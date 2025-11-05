@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>whoami</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="terminal">
+      <div class="overlay" id="visionOverlay"></div>
+      <canvas class="fx fx-noise" id="fxNoise"></canvas>
+      <div class="fx fx-scan" id="fxScan"></div>
+      <div class="fx fx-tear" id="fxTear"></div>
+      <div class="fx fx-words" id="fxWords"></div>
+      <div class="fx fx-god" id="fxGod"></div>
+      <div class="fx fx-eyes" id="fxEyes"></div>
+      <canvas class="fx fx-cracks" id="fxCracks"></canvas>
+      <div class="fx fx-vignette" id="fxVignette"></div>
+      <div class="start-screen" id="startScreen" role="dialog" aria-modal="true">
+        <div class="start-card">
+          <div class="start-title">whoami</div>
+          <div class="start-subtitle">choose language / выбери язык</div>
+          <div class="start-buttons">
+            <button class="start-btn" data-lang="en">English</button>
+            <button class="start-btn" data-lang="ru">Русский</button>
+          </div>
+          <div class="start-hint">E — English · R — Русский</div>
+        </div>
+      </div>
+      <div class="output" id="output"></div>
+      <form id="inputForm" autocomplete="off">
+        <div class="prompt-container">
+          <span class="prompt" id="promptPrefix">/home/user ▸</span>
+          <input
+            id="inputField"
+            class="input-field"
+            type="text"
+            spellcheck="false"
+            autofocus
+          />
+        </div>
+      </form>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
