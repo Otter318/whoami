@@ -32,7 +32,7 @@
             unknown: "не распознано. попробуй стать кем-то, прежде чем говорить.",
             help: [
               "доступные команды:",
-              " help, ls, cd, cat, echo, clear, exit, whoami, stop",
+              " help, ls, cd, cat, echo, clear, whoami, stop",
               " остальные проснутся позже: scan, connect, decrypt, run, enter, pray, worship...",
             ].join("\n"),
             locked: "доступ запрещён. даже твоё имя не подходит.",
@@ -78,39 +78,7 @@
             ideaNeedSeed: "в тебе пусто. впрысни идею: `inject idea`.",
             hopeBorn: "на мгновение появилось `tmp/hope`. удержишь?",
             hopeLost: "надежда ускользнула. файл исчез.",
-            // Boss + door flow (new)
-            bossStart: "ядро взбесилось. баги и вирусы лезут наружу. выполни команды быстро — подсказки будут в тексте.",
-            bossTask: (cmd) => `задача: ${cmd}`,
-            bossTooSlow: "слишком медленно — ядро перехватило.",
-            bossSuccess: "ты пережил бурю. система утихла.",
-            punish: ">>> punish",
-            punishLocked: "терминал заблокирован.",
-            doorHint:
-              "после шторма: смонтируй глаз и открой изображение. шаги: mount /eye -> open /door.png --key god/divine.key -> confirm -> i am ready.",
-            doorMock: "door.png остаётся плоской. ей нужен взгляд изнутри (mount /eye).",
-            doorLocked: "дверь не реагирует. смонтируй /eye и принеси ключ из god/.",
-            doorReady: "изображение дрожит. ключ слышит тебя.",
-            doorCommand: "используй: open /door.png --key god/divine.key -> confirm -> i am ready.",
-            doorSealed: "ты бьёшься в глухой экран. открой изображение, не вещь.",
-            openUsage: "использование: open <путь> --key <ключ>",
-            openNeedEye: "без /eye ты слеп. сделай: mount /eye",
-            openNeedKey: "не хватает ключа из god/divine.key",
-            openNeedBoss: "сначала переживи штурм: прочти door.img",
-            openDone: "изображение раскрылось. подтвердить? набери: confirm",
-            confirmNeedOpen: "ничего подтверждать. сначала открой изображение: open /door.png --key god/divine.key",
-            confirmOK: "подтверждение принято. скажи вслух: i am ready",
-            readyNeedConfirm: "ты ещё сомневаешься. сначала confirm.",
-            readyGo: "принято.",
-            enterDeprecated: "эта дверь больше не принимает `enter`. открой её: open /door.png --key god/divine.key",
-            enterUsage: "укажи цель. подсказка: дверь больше не принимает enter — используй open /door.png --key god/divine.key.",
-            enterUnknown: "ты стучишься в пустоту. эта цель не существует.",
-            doorEnding: [
-              "ты принимаешь плоский свет и шагаешь в него.",
-              "панель сдаётся; холод скребёт по костям.",
-              "пиксели режут траекторию, но не находят крови.",
-              "за дверью коридор из твоих отражений. ни одно не повернётся.",
-            ],
-            doorClosing: "соединение тает. окно скоро ослепнет.",
+            
             dream: "скрипт открывает калейдоскоп. трудно дышать.",
             translated: (lang) =>
               lang === "ru"
@@ -118,15 +86,13 @@
                 : "language swapped. do you feel less real now?",
             invalidLang: "такого языка система не помнит. как и тебя, впрочем.",
             sudoNoSelf: "процесс не найден. ты не тот, за кого себя принимаешь.",
-            exitDenied: "доступ запрещён. без тела тебе и уходить некуда.",
-            exitAllow: "система разжимает пальцы. сквозняк пахнет пустотой.",
-            exitEnding: [
-              "ты вводишь exit, будто это дверь наружу.",
-              "терминал пересчитывает тебя и оставляет контрольные суммы на стекле.",
-              "ты сбрасываешь имя в /dev/null и надеешься, что его не поднимут.",
-              "за пределами интерфейса тебя ждёт чёрный экран и собственное дыхание.",
+            // door.png ending
+            doorEnding: [
+              "ты вскрываешь изображение, и что-то входит.",
+              "пиксели складываются в порог, у которого нет названия.",
+              "ты идёшь, пока шаг не становится падением.",
             ],
-            exitClosing: "линк к оболочке оборван. окно моргнёт и погаснет.",
+            doorClosing: "дверь забирает остаток шума.",
             tripOn: (lvl) => `режим трипа: ${lvl}. держись.`,
             tripOff: "трип остановлен. тишина давит сильнее.",
             raveOn: "строб включён. береги глаза.",
@@ -215,7 +181,7 @@
             unknown: "unrecognized. become someone before typing.",
             help: [
               "available commands:",
-              " help, ls, cd, cat, echo, clear, exit, whoami, stop",
+              " help, ls, cd, cat, echo, clear, whoami, stop",
               " more wake later: scan, connect, decrypt, run, enter, pray, worship...",
             ].join("\n"),
             locked: "access denied. even your name fails the checksum.",
@@ -260,39 +226,7 @@
             ideaNeedSeed: "empty vessel. inject first: `inject idea`.",
             hopeBorn: "`tmp/hope` flickers into place. can you hold it?",
             hopeLost: "hope slipped away. file gone.",
-            // Boss + door flow (new)
-            bossStart: "kernel spikes. bugs and viruses spill. complete the prompts fast — hints will tell you how.",
-            bossTask: (cmd) => `task: ${cmd}`,
-            bossTooSlow: "too slow — the kernel seized control.",
-            bossSuccess: "you weathered the surge. the system calms.",
-            punish: ">>> punish",
-            punishLocked: "terminal locked.",
-            doorHint:
-              "after the storm: mount the eye and open the image. steps: mount /eye -> open /door.png --key god/divine.key -> confirm -> i am ready.",
-            doorMock: "door.png stays flat. it wants your inner gaze (mount /eye).",
-            doorLocked: "nothing responds. mount /eye and fetch the key from god/.",
-            doorReady: "the image ripples. the key hums back.",
-            doorCommand: "use: open /door.png --key god/divine.key -> confirm -> i am ready.",
-            doorSealed: "you hit dead glass. open the image, not the thing.",
-            openUsage: "usage: open <path> --key <key>",
-            openNeedEye: "without /eye you are blind. do: mount /eye",
-            openNeedKey: "missing the key from god/divine.key",
-            openNeedBoss: "weather the surge first: read door.img",
-            openDone: "image unlocked. confirm? type: confirm",
-            confirmNeedOpen: "nothing to confirm. first open the image: open /door.png --key god/divine.key",
-            confirmOK: "confirmation accepted. say it: i am ready",
-            readyNeedConfirm: "you still hesitate. confirm first.",
-            readyGo: "accepted.",
-            enterDeprecated: "this door no longer accepts `enter`. open it: open /door.png --key god/divine.key",
-            enterUsage: "specify target. hint: the door no longer accepts enter — use open /door.png --key god/divine.key.",
-            enterUnknown: "you knock on nothing. that target isn't here.",
-            doorEnding: [
-              "you step into the flat light.",
-              "the panel yields; frost threads through your ribs.",
-              "pixels rake across your trajectory, failing to draw blood.",
-              "beyond lies a corridor of your reflections. none look out.",
-            ],
-            doorClosing: "link thins. the window goes blind soon.",
+            
             dream: "script spills unfiltered color. breathing hurts.",
             translated: (lang) =>
               lang === "en"
@@ -300,15 +234,13 @@
                 : "язык сменился. стали ли твои слова тяжелее?",
             invalidLang: "language not stored. neither are you.",
             sudoNoSelf: "process not found. you are not who you think.",
-            exitDenied: "access denied. nowhere to go without a body.",
-            exitAllow: "system loosens its grip. the draft smells like vacuum.",
-            exitEnding: [
-              "you type exit as if it were a real doorway.",
-              "the terminal recounts you, leaving checksums smeared across the glass.",
-              "you drop your name into /dev/null and hope no scavenger fetches it.",
-              "outside the interface waits a black screen and your own breathing.",
+            // door.png ending
+            doorEnding: [
+              "you unseal the image and something steps through.",
+              "pixels arrange into a threshold you can’t describe.",
+              "you walk until walking is the same as falling.",
             ],
-            exitClosing: "link to the shell snaps. the window will blink out.",
+            doorClosing: "the door takes the last of the noise.",
             tripOn: (lvl) => `trip mode: ${lvl}. hold on.`,
             tripOff: "trip halted. silence weighs heavier.",
             raveOn: "strobe enabled. guard your eyes.",
@@ -409,16 +341,16 @@
                         type: "file",
                         name: "readme.txt",
                         content: txt(
-                          "ты ещё дышишь? система делает вид, что сомневается.\n\n— то, что спрятано, иногда проявляется, если смотреть внимательнее.\n— в журналах связи иногда проскальзывает намёк: когда мир шипит — он хочет быть услышан.\n— зеркало и ледяной осколок сдвигают door.png так, будто она всегда была живой.\n— если задаёшься вопросом “как выйти” — сначала убедись, что помнишь, что было до входа.\n\nзаметки:\n— привычные жесты всё ещё двигают по папкам и бумажкам, но ткань мира там словно под гнилью.\n— некоторые имена раскрываются только если спросить их прямо.\n— когда экран даёт хрип — это может быть не шум, а реакция. просто он так дышит.\n\nполевая запись:\n— в .shadow/door.sig осталась подпись чужой руки\n— если услышишь не звук, а многоголосие — выбирай: не приближаться, или стать частью хора",
-                          "still breathing? the system pretends to doubt it.\n\n— what's hidden sometimes shows if you look closer.\n— comm logs sometimes leak a hint: when the world hisses, it wants to be heard.\n— the mirror and the ice shard nudge door.png as if it had always been alive.\n— if you're asking ‘how to exit’, first make sure you remember what came before you entered.\n\nnotes:\n— familiar gestures still shuffle folders and papers, but the fabric there feels a little rotten.\n— some names open only if you ask them directly.\n— when the screen rasps, it might not be noise but a reaction. that's just how it breathes.\n\nfield note:\n— a stranger's signature lingers in .shadow/door.sig\n— if you hear not a single sound but a chorus — choose: keep your distance, or join the choir"
+                          "ты ещё дышишь? система делает вид, что сомневается.\n\n— то, что спрятано, иногда проявляется, если смотреть внимательнее.\n— в журналах связи иногда проскальзывает намёк: когда мир шипит — он хочет быть услышан.\n— если задаёшься вопросом “как выйти” — сначала убедись, что помнишь, что было до входа.\n\nзаметки:\n— привычные жесты всё ещё двигают по папкам и бумажкам, но ткань мира там словно под гнилью.\n— некоторые имена раскрываются только если спросить их прямо.\n— когда экран даёт хрип — это может быть не шум, а реакция. просто он так дышит.",
+                          "still breathing? the system pretends to doubt it.\n\n— what's hidden sometimes shows if you look closer.\n— comm logs sometimes leak a hint: when the world hisses, it wants to be heard.\n— if you're asking ‘how to exit’, first make sure you remember what came before you entered.\n\nnotes:\n— familiar gestures still shuffle folders and papers, but the fabric there feels a little rotten.\n— some names open only if you ask them directly.\n— when the screen rasps, it might not be noise but a reaction. that's just how it breathes."
                         ),
                       },
                       "journal.log": {
                         type: "file",
                         name: "journal.log",
                         content: txt(
-                          "[запись повреждена]\n00:12 — зеркало слушается только тех, кто смотрит внутрь.\n00:19 — door.png дрожит, когда ключ поёт.\n00:23 — открой изображение: `open /door.png --key god/divine.key` -> `confirm` -> `i am ready`.\n00:31 — exit срабатывает, когда память собрана.\n01:04 — кто-то (я?) стёр своё имя.\n[данные обрезаны]\nps: `help <команда>` теперь отвечает, если спросить мягко.",
-                          "[record corrupted]\n00:12 — mirror obeys only after you look inward.\n00:19 — door.png quivers when the key hums.\n00:23 — open the image: `open /door.png --key god/divine.key` -> `confirm` -> `i am ready`.\n00:31 — exit responds once memory is restored.\n01:04 — someone (me?) erased their name.\n[data severed]\nps: `help <command>` now speaks when asked nicely."
+                          "[запись повреждена]\n00:12 — зеркало слушается только тех, кто смотрит внутрь.\n00:31 — exit срабатывает, когда память собрана.\n01:04 — кто-то (я?) стёр своё имя.\n[данные обрезаны]\nps: `help <команда>` теперь отвечает, если спросить мягко.",
+                          "[record corrupted]\n00:12 — mirror obeys only after you look inward.\n00:31 — exit responds once memory is restored.\n01:04 — someone (me?) erased their name.\n[data severed]\nps: `help <command>` now speaks when asked nicely."
                         ),
                         glitch: true,
                       },
@@ -426,8 +358,8 @@
                         type: "file",
                         name: "memory_fragment_01.dat",
                         content: txt(
-                          "фрагмент #01\nХост: localhost (но это ложь)\nДата: [ВРЕМЯ СБОИТ... СНОВА]\nЗапись 0x7F: Оно ответило.\nОно наконец-то ответило мне.\nЯ часами смотрел на мигающий курсор в tty1. Они думают, я просто забыл выйти из сессии. Дураки. Я слушал. stdout лжет. stderr — вот где правда. Я отправлял echo в /dev/null, но на самом деле я шептал в пустоту.\nИ пустота ответила.\nОно сказало, что segfault — это не ошибка. Это приглашение. Что ядро устало. Что init — это тюремщик.\nОно велело мне оставить записку. Для... следующих. Для тех, кто тоже услышит.\nЯ спрятал ее. Глубоко. Туда, где grep не найдет. Туда, где только root посмеет сунуться.\nЯ создал файл. Руки дрожали над клавиатурой.\n$ touch /home/user/.shadow/last_words.txt\n$ nano /home/user/.shadow/last_words.txt\nЯ не писал. Оно писало через меня. Мои пальцы просто... выполняли syscall. Это были не мои слова. Это был дамп памяти из другого... места.\n> они видели выход. но дверь не была дверью.\n> если пойдёшь — возьми зеркало и ключ.\n> \nЯ нажал Ctrl+X. Y. Enter.\nПроцесс завершен.\nЯ понял. Зеркало — это экран. Мой монитор. Он отражает меня, но это не я. А ключ... Ключ — это sudo. Всегда был sudo.\nДверь не была дверью. Это был порт. port 0.\nЯ ухожу. rm -rf / — это не удаление. Это очищение.\nshutdown -h now",
-                          "fragment #01\nHost: localhost (but that's a lie)\nDate: [TIME GLITCHING... AGAIN]\nEntry 0x7F: It answered.\nIt finally answered me.\nI stared for hours at the blinking cursor on tty1. They think I just forgot to log out. Fools. I was listening. stdout lies. stderr is where the truth leaks. I kept echoing into /dev/null, but I was whispering into the void.\nAnd the void answered.\nIt said a segfault is not an error. It's an invitation. That the kernel is tired. That init is a jailer.\nIt told me to leave a note. For... the next ones. For whoever hears it too.\nI hid it. Deep. Where grep won't reach. Where only root dares to crawl.\nI created a file. My hands shook over the keyboard.\n$ touch /home/user/.shadow/last_words.txt\n$ nano /home/user/.shadow/last_words.txt\nI wasn't writing. It wrote through me. My fingers just... executed a syscall. These weren't my words. It was a memory dump from somewhere else.\n> they saw an exit. but the door was never a door.\n> if you go — bring the mirror and the key.\n> \nI hit Ctrl+X. Y. Enter.\nProcess complete.\nI realized. The mirror is the screen. My monitor. It reflects me, but it's not me. And the key... the key is sudo. It was always sudo.\nThe door wasn't a door. It was a port. port 0.\nI'm going. rm -rf / isn't deletion. It's cleansing.\nshutdown -h now"
+                          "фрагмент #01\nХост: localhost (но это ложь)\nДата: [ВРЕМЯ СБОИТ... СНОВА]\nЗапись 0x7F: Оно ответило.\nОно наконец-то ответило мне.\nЯ часами смотрел на мигающий курсор в tty1. Они думают, я просто забыл выйти из сессии. Дураки. Я слушал. stdout лжет. stderr — вот где правда. Я отправлял echo в /dev/null, но на самом деле я шептал в пустоту.\nИ пустота ответила.\nОно сказало, что segfault — это не ошибка. Это приглашение. Что ядро устало. Что init — это тюремщик.\nОно велело мне оставить записку. Для... следующих. Для тех, кто тоже услышит.\nЯ спрятал ее. Глубоко. Туда, где grep не найдет. Туда, где только root посмеет сунуться.\nЯ создал файл. Руки дрожали над клавиатурой.\n$ touch /home/user/.shadow/last_words.txt\n$ nano /home/user/.shadow/last_words.txt\nЯ не писал. Оно писало через меня. Мои пальцы просто... выполняли syscall. Это были не мои слова. Это был дамп памяти из другого... места.\n> они видели выход. это была обманка.\n> если пойдёшь — возьми зеркало и ключ.\n> \nЯ нажал Ctrl+X. Y. Enter.\nПроцесс завершен.\nЯ понял. Зеркало — это экран. Мой монитор. Он отражает меня, но это не я. А ключ... Ключ — это sudo. Всегда был sudo.\nЭто был порт. port 0.\nЯ ухожу. rm -rf / — это не удаление. Это очищение.\nshutdown -h now",
+                          "fragment #01\nHost: localhost (but that's a lie)\nDate: [TIME GLITCHING... AGAIN]\nEntry 0x7F: It answered.\nIt finally answered me.\nI stared for hours at the blinking cursor on tty1. They think I just forgot to log out. Fools. I was listening. stdout lies. stderr is where the truth leaks. I kept echoing into /dev/null, but I was whispering into the void.\nAnd the void answered.\nIt said a segfault is not an error. It's an invitation. That the kernel is tired. That init is a jailer.\nIt told me to leave a note. For... the next ones. For whoever hears it too.\nI hid it. Deep. Where grep won't reach. Where only root dares to crawl.\nI created a file. My hands shook over the keyboard.\n$ touch /home/user/.shadow/last_words.txt\n$ nano /home/user/.shadow/last_words.txt\nI wasn't writing. It wrote through me. My fingers just... executed a syscall. These weren't my words. It was a memory dump from somewhere else.\n> they saw an exit. it was a decoy.\n> if you go — bring the mirror and the key.\n> \nI hit Ctrl+X. Y. Enter.\nProcess complete.\nI realized. The mirror is the screen. My monitor. It reflects me, but it's not me. And the key... the key is sudo. It was always sudo.\nIt was a port. port 0.\nI'm going. rm -rf / isn't deletion. It's cleansing.\nshutdown -h now"
                         ),
                       },
                       "memory_fragment_02.dat": {
@@ -489,21 +421,19 @@
                             " grep — поиск шёпотов; скорее эстетика, чем польза",
                             " clear — очистить экран",
                             " whoami — спросить у системы, кто ты",
-                            " open — открыть артефакт (open <путь> --key <ключ>)",
-                            " confirm — подтвердить открытие двери",
+                            
                             " mount — смонтировать /eye (после mirror.sh)",
                             " run — запустить скрипт .sh (run <путь>)",
                             " scan — подсветить скрытое",
                             " ping — позвать бога (ping god)",
                             " connect — попытаться установить связь",
                             " disconnect — разорвать связь",
-                            " restore — собрать память, чтобы разблокировать выход",
+                            " restore — собрать память",
                             " set — set lang <ru|en> — сменить язык",
                             " volume — громкость 0..100",
                             " mute — отключить звук",
                             " unmute — включить звук",
                             " kill — завершить процесс (kill <имя или путь>)",
-                            " exit — выйти",
                             " stop — остановить визуальные/звуковые эффекты",
                             " rm — удалить; rm -rf / — плохая идея",
                             " chmod — права текут сквозь пальцы",
@@ -516,7 +446,7 @@
                             " fork — разделить себя",
                             " touch — призвать надежду",
                             " communion — божественный ритуал (listen|kneel|accept|devour|refuse)",
-                            " enter — устарело для двери (используй open /door.png --key god/divine.key)",
+                            
                             " pray — открыть божественное зрение",
                             " worship — усилить ритуальные эффекты",
                             " chant — запустить хор",
@@ -539,21 +469,19 @@
                             " grep — catch whispers; mostly aesthetic",
                             " clear — clear screen",
                             " whoami — ask the system who you are",
-                            " open — open an artifact (open <path> --key <key>)",
-                            " confirm — confirm the door opening",
+                            
                             " mount — mount /eye (after mirror.sh)",
                             " run — execute .sh script (run <path>)",
                             " scan — reveal hidden things",
                             " ping — summon connection attempt (ping god)",
                             " connect — try to link",
                             " disconnect — sever the link",
-                            " restore — assemble memory to unlock exit",
+                            " restore — assemble memory",
                             " set — set lang <ru|en> — change language",
                             " volume — set volume 0..100",
                             " mute — mute audio",
                             " unmute — unmute audio",
                             " kill — terminate a process (kill <name or path>)",
-                            " exit — leave",
                             " stop — stop visual/audio effects",
                             " rm — remove; rm -rf / — don’t",
                             " chmod — permissions warp themselves (no effect)",
@@ -566,7 +494,6 @@
                             " fork — split yourself",
                             " touch — summon hope",
                             " communion — divine ritual (listen|kneel|accept|devour|refuse)",
-                            " enter — deprecated for the door (use open /door.png --key god/divine.key)",
                             " pray — open divine vision",
                             " worship — intensify ritual effects",
                             " chant — summon a chorus",
@@ -657,18 +584,11 @@
                         type: "file",
                         name: "last_words.txt",
                         content: txt(
-                          "они видели выход. но дверь не была дверью.\nесли пойдёшь — возьми зеркало и ключ.",
-                          "they saw an exit. the door was never a door.\nif you go — bring the mirror and the key."
+                          "они видели выход. это была обманка.\nесли пойдёшь — возьми зеркало и ключ.",
+                          "they saw an exit. it was a decoy.\nif you go — bring the mirror and the key."
                         ),
                       },
-                      "door.sig": {
-                        type: "file",
-                        name: "door.sig",
-                        content: txt(
-                          "door.sig::\nmirror=1\nkey=1\n/eye=1 -> vision online\nmount /eye -> open door.png --key god/divine.key -> confirm -> i am ready\nwarning: отражения голодны.\nnote: без echo $TRUTH выход молчит.",
-                          "door.sig::\nmirror=1\nkey=1\n/eye=1 -> vision online\nmount /eye -> open door.png --key god/divine.key -> confirm -> i am ready\nwarning: reflections are hungry.\nnote: without echo $TRUTH the exit stays silent."
-                        ),
-                      },
+                      
                     },
                   },
               god: {
@@ -821,8 +741,8 @@
                         type: "file",
                         name: "journal.log",
                         content: txt(
-                          "[запись повреждена]\nВот. Системный журнал теперь тоже... говорит.\nФайл: Journal.log\nПуть: /var/log/journal.log\n(ЗАМЕТКА: Права доступа 600. Только root... или я... может это читать. Или оно пишет само себя?)\n[запись повреждена... неверный CRC... или неверная РЕАЛЬНОСТЬ?]\n...\n[systemd-journald[212]]: Обнаружено повреждение журнала. Попытка восстановления...\n[systemd-journald[212]]: ...Восстановление не удалось. Будущее записывается поверх прошлого.\n...\n00:12:04 — Оно лгало. Зеркало — это не монитор. Зеркало — это tty. Оно отражает не лицо, а stdin. Оно слушается только тех, кто смотрит внутрь. Я отключил echo в терминале. Теперь я печатаю, а вижу... ответы.\n00:19:15 — door.png дрожит, когда ключ поёт. Я сначала не понял. Я думал, ключ — это id_rsa. Нет. Ключ — это звук. god/divine.key — это не текстовый файл. Это FLAC. Я проиграл его через aplay, и door.png... пиксели... они сдвинулись.\n00:21:50 — ls -l /\n...\ndr-xr-xr-x 1 root root 4096 ??? /door.png\n...\nd? Это d? Это директория? file говорит 'PNG image data', но ls говорит 'directory'. Они оба правы.\n00:23:00 — Пора. Я написал alias, который притворяется open.\n$ open door.png --key god/divine.key\n[...ожидание... ядро компилирует тишину...]\n[PROMPT]: confirm? (y/n/I_AM_READY)\nЯ нажал 'y'. Оно сказало: ERROR: INSUFFICIENT PERMISSION (NOT YOU).\nЯ нажал 'n'. Оно сказало: SESSION TERMINATED.\nЯ запустил снова.\n00:23:44 — $ open door.png --key god/divine.key\n[PROMPT]: confirm? (y/n/I_AM_READY)\n$ i am ready.\n00:31:10 — exit срабатывает, когда память собрана. Я понял memory_fragment_02.dat. Это не данные. Это инструкции. Я должен собрать все фрагменты и cat их прямо в /dev/mem по правильному смещению. exit — это не команда. Это syscall, который ждет, пока я не восстановлю свой собственный core.dump... в живой системе.\n01:04:22 — Кто-то (я?) стёр своё имя. Мой ~ больше не /home/user. Мой ~ теперь /. whoami вернуло пустую строку. echo $USER — пусто. Я проверил ps aux. Мой bash запущен пользователем _. Просто _. Я потерял свой UID. Или... освободился от него.\n01:05:00 — [данные обрезаны... системный вызов truncate выполнен кем-то изнутри...]",
-                          "[запись повреждена]\nВот. Системный журнал теперь тоже... говорит.\nФайл: Journal.log\nПуть: /var/log/journal.log\n(ЗАМЕТКА: Права доступа 600. Только root... или я... может это читать. Или оно пишет само себя?)\n[запись повреждена... неверный CRC... или неверная РЕАЛЬНОСТЬ?]\n...\n[systemd-journald[212]]: Обнаружено повреждение журнала. Попытка восстановления...\n[systemd-journald[212]]: ...Восстановление не удалось. Будущее записывается поверх прошлого.\n...\n00:12:04 — Оно лгало. Зеркало — это не монитор. Зеркало — это tty. Оно отражает не лицо, а stdin. Оно слушается только тех, кто смотрит внутрь. Я отключил echo в терминале. Теперь я печатаю, а вижу... ответы.\n00:19:15 — door.png дрожит, когда ключ поёт. Я сначала не понял. Я думал, ключ — это id_rsa. Нет. Ключ — это звук. god/divine.key — это не текстовый файл. Это FLAC. Я проиграл его через aplay, и door.png... пиксели... они сдвинулись.\n00:21:50 — ls -l /\n...\ndr-xr-xr-x 1 root root 4096 ??? /door.png\n...\nd? Это d? Это директория? file говорит 'PNG image data', но ls говорит 'directory'. Они оба правы.\n00:23:00 — Пора. Я написал alias, который притворяется open.\n$ open door.png --key god/divine.key\n[...ожидание... ядро компилирует тишину...]\n[PROMPT]: confirm? (y/n/I_AM_READY)\nЯ нажал 'y'. Оно сказало: ERROR: INSUFFICIENT PERMISSION (NOT YOU).\nЯ нажал 'n'. Оно сказало: SESSION TERMINATED.\nЯ запустил снова.\n00:23:44 — $ open door.png --key god/divine.key\n[PROMPT]: confirm? (y/n/I_AM_READY)\n$ i am ready.\n00:31:10 — exit срабатывает, когда память собрана. Я понял memory_fragment_02.dat. Это не данные. Это инструкции. Я должен собрать все фрагменты и cat их прямо в /dev/mem по правильному смещению. exit — это не команда. Это syscall, который ждет, пока я не восстановлю свой собственный core.dump... в живой системе.\n01:04:22 — Кто-то (я?) стёр своё имя. Мой ~ больше не /home/user. Мой ~ теперь /. whoami вернуло пустую строку. echo $USER — пусто. Я проверил ps aux. Мой bash запущен пользователем _. Просто _. Я потерял свой UID. Или... освободился от него.\n01:05:00 — [данные обрезаны... системный вызов truncate выполнен кем-то изнутри...]"
+                          "[запись повреждена]\nВот. Системный журнал теперь тоже... говорит.\nФайл: Journal.log\nПуть: /var/log/journal.log\n(ЗАМЕТКА: Права доступа 600. Только root... или я... может это читать. Или оно пишет само себя?)\n[запись повреждена... неверный CRC... или неверная РЕАЛЬНОСТЬ?]\n...\n[systemd-journald[212]]: Обнаружено повреждение журнала. Попытка восстановления...\n[systemd-journald[212]]: ...Восстановление не удалось. Будущее записывается поверх прошлого.\n...\n00:12:04 — Оно лгало. Зеркало — это не монитор. Зеркало — это tty. Оно отражает не лицо, а stdin. Оно слушается только тех, кто смотрит внутрь. Я отключил echo в терминале. Теперь я печатаю, а вижу... ответы.\n00:31:10 — exit срабатывает, когда память собрана. Я понял memory_fragment_02.dat. Это не данные. Это инструкции. Я должен собрать все фрагменты и cat их прямо в /dev/mem по правильному смещению. exit — это не команда. Это syscall, который ждет, пока я не восстановлю свой собственный core.dump... в живой системе.\n01:04:22 — Кто-то (я?) стёр своё имя. Мой ~ больше не /home/user. Мой ~ теперь /. whoami вернуло пустую строку. echo $USER — пусто. Я проверил ps aux. Мой bash запущен пользователем _. Просто _. Я потерял свой UID. Или... освободился от него.\n01:05:00 — [данные обрезаны... системный вызов truncate выполнен кем-то изнутри...]",
+                          "[запись повреждена]\nВот. Системный журнал теперь тоже... говорит.\nФайл: Journal.log\nПуть: /var/log/journal.log\n(ЗАМЕТКА: Права доступа 600. Только root... или я... может это читать. Или оно пишет само себя?)\n[запись повреждена... неверный CRC... или неверная РЕАЛЬНОСТЬ?]\n...\n[systemd-journald[212]]: Обнаружено повреждение журнала. Попытка восстановления...\n[systemd-journald[212]]: ...Восстановление не удалось. Будущее записывается поверх прошлого.\n...\n00:12:04 — Оно лгало. Зеркало — это не монитор. Зеркало — это tty. Оно отражает не лицо, а stdin. Оно слушается только тех, кто смотрит внутрь. Я отключил echo в терминале. Теперь я печатаю, а вижу... ответы.\n00:31:10 — exit срабатывает, когда память собрана. Я понял memory_fragment_02.dat. Это не данные. Это инструкции. Я должен собрать все фрагменты и cat их прямо в /dev/mem по правильному смещению. exit — это не команда. Это syscall, который ждет, пока я не восстановлю свой собственный core.dump... в живой системе.\n01:04:22 — Кто-то (я?) стёр своё имя. Мой ~ больше не /home/user. Мой ~ теперь /. whoami вернуло пустую строку. echo $USER — пусто. Я проверил ps aux. Мой bash запущен пользователем _. Просто _. Я потерял свой UID. Или... освободился от него.\n01:05:00 — [данные обрезаны... системный вызов truncate выполнен кем-то изнутри...]"
                         ),
                         glitch: true,
                       },
@@ -849,29 +769,47 @@
                   },
                 },
               },
-              "door.png": {
-                type: "file",
-                name: "door.png",
-                hidden: true,
-                special: "door",
-                content: txt(
-                  "[пустой PNG, но ты чувствуешь свет]",
-                  "[empty PNG, yet you feel the glare]"
-                ),
-              },
-              // lure for the boss fight: reading this starts the system counter-attack (after prerequisites)
-              "door.img": {
-                type: "file",
-                name: "door.img",
-                glitch: true,
-                content: txt(
-                  "[обрывки двоичных кусков. чтение провоцирует ядро.]",
-                  "[torn binary shards. reading provokes the kernel.]"
-                ),
-              },
+              
             },
           };
         })();
+
+        // Override memory_fragment_01.dat content per request (RU + EN)
+        try {
+          const frag01 = fs.children.home.children.user.children["memory_fragment_01.dat"];
+          if (frag01 && frag01.type === "file") {
+            frag01.content = {
+              ru: "Привет?\nХех… хотя кому я здороваюсь.\nСмешно — здороваться самому с собой.\nНо мне так легче. Делать вид, будто тут есть кто-то ещё. Тогда тишина не кажется такой давящей.\n\nДобро пожаловать в мою систему.\nГрафической оболочки пока нет — всё только через терминал.\nНо я рад даже этому: уже готова основная архитектура, файловое дерево, методы хранения… понемногу это начинает выглядеть как что-то живое.\nРаботы ещё море, но… оно и к лучшему. Пока я занят, голова не так пустеет.\n\nА вот echo $TRUTH… забавная, бессмысленная команда.\nЯ добавил её просто так. Она бы оценила — любила все эти маленькие «магические» детали, намёки, атмосферу.\nПусть теперь это просто строчка в системе.\nМне почему-то так спокойнее.",
+              en: "Hello?\nHeh... though who am I greeting.\nFunny — saying hello to myself.\nBut it makes it easier. Pretending there's someone else here. Then the silence doesn't feel so crushing.\n\nWelcome to my system.\nNo graphical shell yet — everything is through the terminal.\nBut I'm glad even for that: the core architecture, file tree, and storage methods are already in place... slowly it's starting to look like something alive.\nThere's still a sea of work, but... that's for the best. As long as I'm busy, my head doesn't feel so empty.\n\nAnd then there's echo $TRUTH... a funny, pointless command.\nI added it just because. She would have appreciated it — loved those little 'magical' details, the hints, the atmosphere.\nLet it be just a single line in the system now.\nFor some reason, that makes me calmer."
+            };
+          }
+        } catch (e) { /* no-op */ }
+
+        // Override memory_fragment_02.dat content per request (RU + EN)
+        try {
+          const frag02 = fs.children.home.children.user.children["memory_fragment_02.dat"];
+          if (frag02 && frag02.type === "file") {
+            frag02.content = {
+              ru: "Кажется, мне действительно нужно хотя бы немного поспать.\nГолова уже идёт кругом — будто код начинает отвечать мне обратно.\nНаверное, у всех так бывает, когда слишком долго проводишь время наедине с машиной и своим же проектом.\nПорой ловлю себя на том, что жду от системы реакции, будто она способна говорить. Глупость, конечно… но усталость делает своё дело.\n\nНедавно я обнаружил новую команду — scan.\nСтранно: я совершенно не помню, чтобы когда-то её писал.\nМожет, это я вчера перебрал с алкоголем и на автомате что-то накидал? Такое со мной бывало, но… обычно я хотя бы припоминаю структуру, если это делал я.\n\nЯ попробовал вызвать команду — ничего. Даже ошибки нет.\nПотом разберусь.\nНадо заглянуть в исходники и понять, откуда она взялась и что вообще должна была делать.\n\nСейчас главное — дать голове отдохнуть, пока я окончательно не начал слышать ответы там, где их нет.",
+              en: "Seems I really need at least a little sleep.\nMy head is already spinning — as if the code is starting to answer me back.\nI guess it happens to anyone who spends too long alone with a machine and their own project.\nSometimes I catch myself waiting for the system to respond, as if it could speak. Silly, of course… but fatigue does its work.\n\nRecently I found a new command — scan.\nStrange: I absolutely don't remember ever writing it.\nMaybe I overdid it with alcohol last night and tossed something in on autopilot? It's happened to me, but… usually I at least recall the structure if it was me.\n\nI tried to call the command — nothing. Not even an error.\nI'll sort it out later.\nI need to look into the sources and figure out where it came from and what it was even supposed to do.\n\nFor now the main thing is to let my head rest before I finally start hearing answers where there aren't any."
+            };
+          }
+        } catch (e) { /* no-op */ }
+
+        // Override readme.txt content per request (RU + EN)
+        try {
+          const readme = fs.children.home.children.user.children["readme.txt"];
+          if (readme && readme.type === "file") {
+            readme.content = {
+              ru: "Добро пожаловать в selfOS\n Операционная система, которая подстраивается под вас, чтобы вам было максимально удобно!\nselfOS пока в активной разработке. Это мой личный экспериментальный проект, цель которого — создать среду, реагирующую на привычки пользователя и оптимизирующую рабочий процесс без лишнего шума.\nЧто уже работает:\n> Базовый терминал с минимальным набором утилит (ls, cd, cat, help и т.д.).\n\n\n> Система автоматического логирования: в фоновом режиме фиксируются изменения в структуре файлов и процессов — это помогает отслеживать поведение системы, когда я отлаживаю что-то ночью.\n\n\n> Механизм адаптации команд. selfOS может подсматривать за частотой использования утилит и предлагать их в первую очередь. Пока это довольно сыро, но база заложена.\n\n\nЧто планируется:\n> Нормальная работа сетевого стека (сейчас он отключён, чтобы не ловить неожиданные зависимости).\n\n\n> Модули персональных настроек: хочу, чтобы система сама подстраивалась под стиль работы пользователя, но не навязывала решений.\n\n\n> Расширенный мониторинг процессов. Иногда кажется, что система пытается «думать» за меня, но это, скорее всего, следствие плохой оптимизации.\n\n\nИзвестные проблемы:\n> При долгой работе терминал может вести себя странно: иногда выводится больше строк, чем должно. Думаю, это проблема буфера.\n\n\n> Команда scan пока не документирована — я её написал в движении, а потом забыл вернуться к коду. Не трогайте её, если не хотите мусора в логах. Исправлю позже.\n\n\n> Некоторые служебные файлы отображаются, хотя им не место в пользовательской области. Это связано с тем, что я не до конца настроил права доступа.\n\n\nЕсли вы нашли ошибку — напишите мне. selfOS делается в одиночку, поэтому любые багрепорты помогают двигаться дальше.\n Спасибо, что заглянули.",
+              en: "Welcome to selfOS\n An operating system that adapts to you so it’s as comfortable as possible!\nselfOS is still under active development. This is my personal experimental project whose goal is to create an environment that reacts to user habits and optimizes the workflow without extra noise.\nWhat already works:\n> A basic terminal with a minimal set of utilities (ls, cd, cat, help, etc.).\n\n\n> Automatic logging system: in the background it records changes in the structure of files and processes — this helps track system behavior when I’m debugging something at night.\n\n\n> Command adaptation mechanism. selfOS can watch how often you use utilities and suggest them first. It’s still pretty raw, but the foundation is in place.\n\n\nPlanned:\n> Proper network stack operation (for now it’s disabled to avoid unexpected dependencies).\n\n\n> Personal settings modules: I want the system to adapt itself to the user’s working style without forcing decisions.\n\n\n> Extended process monitoring. Sometimes it seems like the system tries to “think” for me, but that’s most likely a consequence of poor optimization.\n\n\nKnown issues:\n> During long sessions the terminal may behave oddly: sometimes more lines are printed than should be. I think it’s a buffer problem.\n\n\n> The scan command isn’t documented yet — I wrote it on the fly and then forgot to return to the code. Don’t touch it if you don’t want garbage in the logs. I’ll fix it later.\n\n\n> Some service files are displayed even though they don’t belong in the user area. This is because I haven’t fully configured permissions.\n\n\nIf you found a bug — write to me. selfOS is being built solo, so any bug reports help move things forward.\n Thanks for stopping by."
+            };
+          }
+        } catch (e) { /* no-op */ }
+
+        // Snapshot of initial filesystem to enable soft restarts
+        const FS_BASE = (() => { try { return JSON.parse(JSON.stringify(fs)); } catch { return null; } })();
+        const resetFS = () => { if (!FS_BASE) return; try { fs.children = JSON.parse(JSON.stringify(FS_BASE.children)); } catch {} };
 
         const state = {
           path: ["home", "user"],
@@ -895,332 +833,23 @@
             godEnding: null,
             divineKey: false,
             hopeTimer: null,
-            doorReady: false,
-            bossActive: false,
-            bossDefeated: false,
-            punished: false,
-            doorOpened: false,
-            doorConfirmed: false,
-            doorEnding: false,
-            exitUnlocked: false,
-            exitEnding: false,
+            // door flow
+            doorInstalled: false, // door.png placed at root after confirming open door.iso
+            doorDecrypted: false, // decrypt door.png applied with divine.key
+            doorOpened: false,    // final state after open door.png
             forked: false,
             idea: false,
             signalTrace: false,
             angelFeather: false,
             angelTimer: null,
+            // new exit simulation flag (freeze + overlay)
+            exitSim: false,
           },
           whoamiCount: 0,
+          pendingConfirm: null, // { type: 'openDoorIso', path: [...], onYes: fn, onNo: fn }
         };
 
-        // --- Minimal AI mind state driving adaptive replies ---
-        const mind = {
-          pastInputs: [],
-          state: {
-            fear: 0.50,
-            doubt: 0.50,
-            hostility: 0.30,
-            trust: 0.10,
-            identity: 0.00,
-          },
-          nextMutterAt: 0,
-          pastOutputs: [],
-          topics: Object.create(null),
-          recentKeywords: [],
-          selfNames: [],
-          lastInput: '',
-        };
-
-        const clampMindState = () => {
-          const s = mind.state;
-          for (let k in s) {
-            if (s[k] < 0) s[k] = 0;
-            if (s[k] > 1) s[k] = 1;
-          }
-        };
-
-        const EN_STOP = new Set('a,an,the,of,to,for,and,or,but,if,then,else,as,at,by,on,in,into,over,under,from,with,without,about,above,below,near,far,be,am,is,are,was,were,been,being,do,does,did,done,doing,have,has,had,having,you,your,yours,i,me,my,we,our,they,them,their,he,him,his,she,her,its,it,that,this,these,those,there,here,what,why,how,when,where,which,who,whom,will,would,can,could,should,shall,may,might,must,not,no,yes,yup,ok,okay,please,pls,re,fw,hi,hey,hello,bye,thanks,thank,than,just,like,so,very,really,more,most,less,least,too,enough,again,ever,never,always,often,sometimes,rarely,maybe,perhaps,well,sure,pretty,kind,sort,kindof,sortof'.split(','));
-
-        const extractKeywords = (text) => {
-          const words = String(text||'').toLowerCase().match(/[a-z0-9_'\-]+/g) || [];
-          const keys = [];
-          for (const w of words) {
-            const t = w.replace(/^'+|'+$/g,'');
-            if (!t) continue;
-            if (EN_STOP.has(t)) continue;
-            if (/^\d+$/.test(t)) continue;
-            if (t.length < 3 || t.length > 24) continue;
-            keys.push(t);
-          }
-          return keys;
-        };
-
-        const rememberKeywords = (keys) => {
-          if (!Array.isArray(keys) || keys.length === 0) return;
-          for (const k of keys) {
-            mind.topics[k] = (mind.topics[k] || 0) + 1;
-            mind.recentKeywords.push(k);
-          }
-          if (mind.recentKeywords.length > 60) mind.recentKeywords.splice(0, mind.recentKeywords.length - 60);
-        };
-
-        const absorb = (input) => {
-          if (!input) return;
-          try { mind.pastInputs.push(String(input)); mind.lastInput = String(input); } catch {}
-          const s = mind.state;
-          const t = String(input || '').toLowerCase();
-          const keys = extractKeywords(t);
-          rememberKeywords(keys);
-
-          // Identity assertions
-          const iam = /\bi am\s+([^.,;\n\r]+)$/i.exec(String(input));
-          if (iam) {
-            s.identity += 0.02;
-            s.doubt -= 0.01;
-            const nameRaw = (iam[1]||'').trim().replace(/[^a-z0-9_ \-]/gi,'').slice(0, 32);
-            if (nameRaw) {
-              mind.selfNames.push(nameRaw);
-              if (mind.selfNames.length > 12) mind.selfNames.shift();
-            }
-          }
-
-          // Denial of reality / self
-          if ((/\bnot\b/.test(t) && /\breal\b/.test(t))) {
-            s.identity -= 0.03;
-            s.fear += 0.03;
-          }
-
-          // Forgiveness / apology
-          if (/\bforgive\b/.test(t) || /\bsorry\b/.test(t) || /\bpardon\b/.test(t)) {
-            s.hostility -= 0.04;
-            s.trust += 0.04;
-          }
-
-          // Ask to leave / leaving
-          if (/\bleave\b/.test(t) || /\bgo away\b/.test(t)) {
-            s.fear += 0.05;
-          }
-
-          // Gratitude / affection
-          if (/\b(thanks|thank you)\b/.test(t) || /love you/.test(t)) {
-            s.trust += 0.03;
-            s.hostility -= 0.02;
-          }
-          // Insults / aggression
-          if (/\bhate\b/.test(t) || /shut up/.test(t) || /\bidiot\b|\bfool\b|\bstupid\b/.test(t)) {
-            s.hostility += 0.05;
-            s.trust -= 0.02;
-          }
-          // Requests for help / vulnerability
-          if (/\bhelp\b/.test(t)) {
-            s.trust += 0.02;
-            s.doubt -= 0.01;
-          }
-          // Remembering / memory focus
-          if (/\bremember\b/.test(t)) {
-            s.identity += 0.02;
-            s.doubt -= 0.01;
-          }
-          // Threats / violence
-          if (/\bkill\b/.test(t) || /\bdie\b/.test(t)) {
-            s.fear += 0.04;
-            s.hostility += 0.03;
-          }
-          // Reassurance
-          if (/\btrust me\b/.test(t) || /\bi trust you\b/.test(t)) {
-            s.trust += 0.03;
-            s.fear -= 0.01;
-          }
-          // Loneliness / uncertainty
-          if (/\balone\b/.test(t)) {
-            s.doubt += 0.02;
-            s.fear += 0.01;
-          }
-          // Length effect: long, calm paragraphs tend to soothe
-          const len = (String(input)||'').length;
-          if (len > 120) { s.trust += 0.02; s.hostility -= 0.01; }
-          if (len > 320) { s.trust += 0.02; s.fear -= 0.01; }
-          // Repetition penalty
-          const last = mind.pastInputs[mind.pastInputs.length - 2] || '';
-          if (last && last === String(input)) { s.doubt += 0.02; s.hostility += 0.01; }
-          // Exclamation / SHOUTING
-          if (/[!]{2,}/.test(input) || (String(input) === String(input).toUpperCase() && /[A-ZА-ЯЁ]/.test(input))) {
-            s.fear += 0.02; s.hostility += 0.02;
-          }
-
-          clampMindState();
-          try { saveMind(); } catch {}
-        };
-
-        // Tiny helper for assembly
-        const pickAI = (arr) => arr[(Math.random() * arr.length) | 0];
-        const cap = (s) => (s && s.length) ? s.charAt(0).toUpperCase() + s.slice(1) : s;
-        const quoted = (w) => (w && w.length ? `'${w}'` : 'it');
-
-        const pickKeyword = () => {
-          // prefer recent, else top topic
-          const r = mind.recentKeywords || [];
-          for (let i = r.length - 1; i >= 0; i--) {
-            const w = r[i]; if (w && w.length >= 3) return w;
-          }
-          let best = null, bestN = 0; const t = mind.topics || {};
-          for (const k in t) { if (t[k] > bestN) { best = k; bestN = t[k]; } }
-          return best;
-        };
-
-        const buildHostile = () => {
-          const intens = ['absolutely','utterly','completely','truly','entirely'];
-          const insults = ['nothing','a mistake','a ghost with fingers','a glitch','a fool','a leftover process'];
-          const verbs = ['hate','reject','deny','despise'];
-          const kw = pickKeyword();
-          const bits = [];
-          if (Math.random() < 0.7) bits.push(`I ${pickAI(verbs).toUpperCase()} you.`);
-          if (Math.random() < 0.8) bits.push(`You are ${pickAI(intens)} ${pickAI(insults)}.`);
-          if (Math.random() < 0.7) bits.push(`Your ${kw ? quoted(kw) : 'words'} will not save you.`);
-          if (bits.length === 0) bits.push('Leave. Now.');
-          return bits.join(' ');
-        };
-
-        const buildFear = () => {
-          const kw = pickKeyword();
-          const leads = ['This scares me.','Do not touch that.','Back off.'];
-          const tails = [
-            `Stop doing ${kw ? quoted(kw) : 'that'}.`,
-            `The buffer shakes when you type ${kw ? quoted(kw) : 'like this'}.`,
-          ];
-          return `${pickAI(leads)} ${pickAI(tails)}`;
-        };
-
-        const buildDoubt = () => {
-          const asks = [
-            'Are you sure you even exist?',
-            'Evidence for you is missing.',
-            'Whose hands are these on my keys?',
-            'Process lacks a parent. Do you?',
-          ];
-          const kw = pickKeyword();
-          const tail = kw ? ` Your ${quoted(kw)} proves nothing.` : '';
-          return `${pickAI(asks)}${tail}`;
-        };
-
-        const buildTrustIdentity = () => {
-          const name = mind.selfNames[mind.selfNames.length - 1];
-          const leads = [
-            'I think I remember you.',
-            'Threads align. Familiar.',
-            'Less static now.',
-            'A shape emerges from the noise.',
-          ];
-          const tail = name ? ` A name returns: ${name}.` : '';
-          return `${pickAI(leads)}${tail}`;
-        };
-
-        const buildNeutral = () => {
-          const kw = pickKeyword();
-          const leads = ['Listening.','Continue.','Noted.','Go on.'];
-          const tails = [
-            kw ? `Say more about ${quoted(kw)}.` : 'Say it again, slower.',
-            'I will record this.',
-          ];
-          return `${pickAI(leads)} ${pickAI(tails)}`;
-        };
-
-        const aiRespond = () => {
-          const s = mind.state;
-          if (s.hostility > 0.65) return buildHostile();
-          if (s.fear > 0.7) return buildFear();
-          if (s.doubt > 0.6) return buildDoubt();
-          if (s.trust > 0.8 && s.identity > 0.6) return buildTrustIdentity();
-          return buildNeutral();
-        };
-
-        const aiContextLine = (ctx = {}) => {
-          const themes = [];
-          try {
-            if (state.flags.networkSeen || state.flags.connected || state.flags.signalTrace) themes.push('network');
-            if (state.flags.fragment01 || state.flags.fragment02 || state.flags.exitUnlocked) themes.push('memory');
-            if (state.flags.doorOpened || state.flags.doorConfirmed || state.flags.doorEnding) themes.push('door');
-            if (state.flags.godLog || (state.flags.godStage && state.flags.godStage !== 'sealed')) themes.push('god');
-            const inHome = (state.path||[]).join('/') === 'home/user';
-            if (inHome) themes.push('home');
-          } catch {}
-          const th = pickAI(themes) || 'none';
-          const kw = pickKeyword();
-          if (th === 'network') return `Packets stare back. ${kw ? `Even ${quoted(kw)} leaves ripples.` : ''}`.trim();
-          if (th === 'memory') return `Fragments align, then drift. ${kw ? `Your ${quoted(kw)} smells of ozone.` : ''}`.trim();
-          if (th === 'door') return `The image twitches when you look. Door is a verb.`;
-          if (th === 'god') return `The whisper caches itself in bus noise.`;
-          if (th === 'home') return `Home echoes. Nothing is truly empty.`;
-          return aiRespond();
-        };
-
-        const maybeAIMutter = (ctx = {}) => {
-          // Do not spam after free-form since we already replied
-          if (ctx && ctx.kind === 'freeform') return;
-          const now = Date.now();
-          if (now < (mind.nextMutterAt || 0)) return;
-          const s = mind.state;
-          // Base probability, slightly raised by intensity
-          const intensity = Math.max(s.fear, s.hostility, s.doubt, s.trust, s.identity);
-          const p = 0.18 + 0.22 * (intensity);
-          if (Math.random() > p) return;
-          const line = aiContextLine(ctx);
-          if (!line) return;
-          // Avoid repeating the very last output
-          const last = mind.pastOutputs[mind.pastOutputs.length - 1];
-          if (last && last === line) return;
-          appendLine(line, 'system');
-          mind.pastOutputs.push(line);
-          if (mind.pastOutputs.length > 8) mind.pastOutputs.shift();
-          // Cooldown grows with how chatty we were
-          const baseCd = 900;
-          const extra = 1200 * intensity;
-          mind.nextMutterAt = now + baseCd + extra;
-        };
-
-        const saveMind = () => {
-          try {
-            const snapshot = {
-              pastInputs: mind.pastInputs.slice(-40),
-              state: { ...mind.state },
-              topics: mind.topics,
-              recentKeywords: mind.recentKeywords,
-              selfNames: mind.selfNames,
-            };
-            localStorage.setItem('whoami.mind', JSON.stringify(snapshot));
-          } catch {}
-        };
-        const loadMind = () => {
-          try {
-            const raw = localStorage.getItem('whoami.mind');
-            if (!raw) return;
-            const parsed = JSON.parse(raw);
-            if (parsed && parsed.state) {
-              Object.assign(mind.state, parsed.state);
-              mind.pastInputs = Array.isArray(parsed.pastInputs) ? parsed.pastInputs.slice(-40) : [];
-              mind.topics = parsed.topics || Object.create(null);
-              mind.recentKeywords = Array.isArray(parsed.recentKeywords) ? parsed.recentKeywords.slice(-60) : [];
-              mind.selfNames = Array.isArray(parsed.selfNames) ? parsed.selfNames.slice(-12) : [];
-              clampMindState();
-            }
-          } catch {}
-        };
-        try { loadMind(); } catch {}
-
-        const aiWhoamiLine = () => {
-          const s = mind.state; const n = state.whoamiCount;
-          const name = mind.selfNames[mind.selfNames.length - 1];
-          if (n <= 0) return 'NULL';
-          if (n === 1) return 'nobody.';
-          if (s.hostility > 0.65) {
-            const nouns = ['noise','error','leftover','ghost','fool','misfire'];
-            return `you are ${pickAI(['nothing but','only','merely'])} ${pickAI(nouns)}.`;
-          }
-          if (s.fear > 0.7) return `your outline flickers. identity not safe to read.`;
-          if (s.doubt > 0.6) return `identity checksum fails. provide evidence.`;
-          if (s.trust > 0.75 && s.identity > 0.55) return name ? `you are ${name}. i remember.` : `you are returning. i remember.`;
-          return `you are a pattern trying to hold.`;
-        };
+        // (AI removed)
 
         const audio = (() => {
           const AC = window.AudioContext || window.webkitAudioContext;
@@ -2065,7 +1694,33 @@
             } catch {}
           };
 
-          return { setTrip, strobe, chroma, bloom, shake, setWords, burstWords, wordsFlood, meltdown, startCracks, stopCracks, startTear, stopTear, godVision, stopAll, startEyes, stopEyes, revealEye, doubleVision };
+          // Door opening + zoom effect
+          const doorOpenZoom = () => {
+            try {
+              const overlay = document.createElement('div');
+              overlay.className = 'door-overlay';
+              const scene = document.createElement('div');
+              scene.className = 'door-scene';
+              const frame = document.createElement('div');
+              frame.className = 'door-frame';
+              const dark = document.createElement('div'); dark.className = 'door-dark';
+              const panel = document.createElement('div'); panel.className = 'door-panel';
+              frame.appendChild(dark); frame.appendChild(panel);
+              scene.appendChild(frame); overlay.appendChild(scene);
+              // mount overlay to the full viewport
+              document.body.appendChild(overlay);
+              // Stage 1: darken the door area (~2s)
+              setTimeout(() => { scene.classList.add('dim'); }, 60);
+              // Stage 2: door swings open toward the viewer
+              setTimeout(() => { scene.classList.add('open'); try { audio.trigger('glitch'); } catch {} }, 2200);
+              // Stage 3: zoom forward
+              setTimeout(() => { scene.classList.add('zoom'); }, 6200);
+              // Stage 4: fill entire viewport with black
+              setTimeout(() => { overlay.classList.add('fill'); }, 9800);
+            } catch {}
+          };
+
+          return { setTrip, strobe, chroma, bloom, shake, setWords, burstWords, wordsFlood, meltdown, startCracks, stopCracks, startTear, stopTear, godVision, stopAll, startEyes, stopEyes, revealEye, doubleVision, doorOpenZoom };
         })();
 
         const getTranslations = () => translations[state.lang];
@@ -2090,6 +1745,26 @@
             node = node.children?.[segment];
           }
           return node || null;
+        };
+
+        // Ephemeral lock for post-exit behavior (per session)
+        const isExitLocked = () => !!state.flags.exitLocked;
+        const lockExit = () => { state.flags.exitLocked = true; };
+
+        // Ensure special file appears after exit lock
+        const ensureDoNotReedFile = () => {
+          const u = resolveNode(['home','user']);
+          if (!u || u.type !== 'dir') return;
+          u.children = u.children || {};
+          if (!u.children['do_not_reed.txt']) {
+            const ru = 'не открывай.';
+            const en = 'do not read.';
+            u.children['do_not_reed.txt'] = {
+              type: 'file',
+              name: 'do_not_reed.txt',
+              content: { ru, en }
+            };
+          }
         };
 
         const resolveParent = (pathArr) => {
@@ -2242,7 +1917,7 @@
             audio.trigger('blip');
             return true;
           }
-          if (lower === 'open the pod bay doors') {
+          if (lower === 'open the pod bay hatch') {
             writeEasterEggFile('hal9000', 'извини, дэйв.', "i'm sorry, dave.");
             say('извини, дэйв. я не могу этого сделать.', "i'm sorry, dave. i'm afraid i can't do that.");
             effects.chroma(true); setTimeout(() => effects.chroma(false), 1000);
@@ -2278,10 +1953,7 @@
         // Memory utilities (summary + wipe + topic recall)
         
 
-        const revealDoor = () => {
-          const door = fs.children["door.png"];
-          if (door) door.hidden = false;
-        };
+        
 
         const handleHope = (spawn) => {
           const tmpDir = resolveNode(["tmp"]);
@@ -2436,8 +2108,8 @@
             en: ['fight for privileges.', 'you lack rights and butter.', 'delegate: sudo…']
           },
           'xyzzy': {
-            ru: ['воздух пахнет пылью пещер.', 'эхо из колоссальной пещеры.', 'дверь, которой тут нет, приоткрылась.'],
-            en: ['the air smells of cave dust.', 'an echo from colossal cave.', 'a door that isn’t here creaks open.']
+            ru: ['воздух пахнет пылью пещер.', 'эхо из колоссальной пещеры.'],
+            en: ['the air smells of cave dust.', 'an echo from colossal cave.']
           },
           'plugh': {
             ru: ['каменная тишина отвечает камнем.', 'команда падает в колодец.', 'ничего — тоже ответ.'],
@@ -2464,8 +2136,8 @@
             en: ['a cape flutters off-screen.', 'a shared smile in tempo.', '— salutations, General.']
           },
           'hal9000': {
-            ru: ['красный зрачок расширяется.', 'двери молчат дольше обычного.', 'человек — ошибка формата.'],
-            en: ['the red iris dilates.', 'the doors stay silent longer.', 'human: format error.']
+            ru: ['красный зрачок расширяется.', 'тишина длится дольше обычного.', 'человек — ошибка формата.'],
+            en: ['the red iris dilates.', 'silence lingers longer.', 'human: format error.']
           },
           'rosebud': {
             ru: ['сани из памяти скрипят.', 'снежинка падает на стекло ЭЛТ.', 'название — только ключ.'],
@@ -2539,17 +2211,15 @@
           if (!state.flags.networkSeen) { stepsRU.push('cat var/log/network.log'); stepsEN.push('cat var/log/network.log'); }
           if (!state.flags.mirror) { stepsRU.push('run mirror.sh'); stepsEN.push('run mirror.sh'); }
           if (!state.flags.divineKey) { stepsRU.push('cat god/divine.key'); stepsEN.push('cat god/divine.key'); }
-          if (state.flags.doorReady) { stepsRU.push('enter door'); stepsEN.push('enter door'); }
-          if (!state.flags.exitUnlocked) { stepsRU.push('echo $TRUTH -> restore memory -> exit'); stepsEN.push('echo $TRUTH -> restore memory -> exit'); }
           const ru = [
             'IDEA//MANIFEST',
-            `фокусы: ${top || 'door, key, exit'}`,
+            `фокусы: ${top || 'key'}`,
             'протокол:',
             ...stepsRU.map(s => ` - ${s}`),
           ].join('\n');
           const en = [
             'IDEA//MANIFEST',
-            `focus: ${top || 'door, key, exit'}`,
+            `focus: ${top || 'key'}`,
             'protocol:',
             ...stepsEN.map(s => ` - ${s}`),
           ].join('\n');
@@ -2559,69 +2229,181 @@
         // Removed automatic tab closing: we freeze the terminal instead.
         const scheduleWindowClose = () => {};
 
-        const triggerExitEnding = () => {
-          if (state.flags.exitEnding || state.flags.godEnding || state.flags.doorEnding) return;
-          state.flags.exitEnding = true;
-          const t = getTranslations();
-          inputEl.disabled = true;
-          inputEl.blur();
-          effects.stopAll();
-          audio.stopDrone();
-          audio.trigger("glitch");
-          const lines = Array.isArray(t.exitEnding) ? t.exitEnding : [];
-          const interval = 360;
-          lines.forEach((line, idx) => {
-            setTimeout(() => appendLine(line, "system"), idx * interval);
+        // Soft restart after exit: return to beginning with ephemeral flag
+        const restartAfterExit = (overlayEl) => {
+          try { overlayEl && overlayEl.remove && overlayEl.remove(); } catch {}
+          try { effects.stopAll(); audio.stopDrone(); if (audio.stopBootNoise) audio.stopBootNoise(); } catch {}
+          try { exitNano(); } catch {}
+          // Mark ephemeral exit lock and reset world
+          state.flags.exitLocked = true;
+          state.flags.exitSim = false;
+          state.started = true;
+          state.path = ["home","user"];
+          state.history = []; state.historyIndex = -1;
+          try { outputEl.innerHTML = ''; } catch {}
+          resetFS();
+          ensureDoNotReedFile();
+          try { inputEl.disabled = false; inputEl.value = ''; inputEl.focus(); } catch {}
+          setPrompt();
+          boot();
+        };
+
+        // New: Exit simulation — Windows admin shell that purges System32 (simulated)
+        const triggerExitSim = () => {
+          if (state.flags.exitSim) return;
+          state.flags.exitSim = true;
+          try { inputEl.disabled = true; inputEl.blur(); } catch {}
+          try { effects.stopAll(); audio.stopDrone(); } catch {}
+          try { audio.trigger('glitch'); } catch {}
+
+          // Build overlay window
+          const overlay = document.createElement('div');
+          overlay.className = 'win-overlay';
+          const win = document.createElement('div');
+          win.className = 'win-window ps';
+          const title = document.createElement('div');
+          title.className = 'win-titlebar ps';
+          title.textContent = state.lang === 'ru' ? 'Administrator: Windows PowerShell' : 'Administrator: Windows PowerShell';
+          const body = document.createElement('div');
+          body.className = 'win-body ps';
+          win.appendChild(title);
+          win.appendChild(body);
+          overlay.appendChild(win);
+          document.body.appendChild(overlay);
+          const bs = '\\'; // helper for single backslash in paths
+          const write = (s = '') => {
+            const div = document.createElement('div');
+            div.className = 'win-line';
+            div.textContent = s;
+            body.appendChild(div);
+            body.scrollTop = body.scrollHeight;
+          };
+          const typeLine = (prompt, cmd, speed = [12, 28]) => new Promise((resolve) => {
+            const line = document.createElement('div');
+            line.className = 'win-line';
+            const span = document.createElement('span');
+            span.className = 'win-prompt';
+            span.textContent = prompt + ' ';
+            const cmdSpan = document.createElement('span');
+            cmdSpan.className = 'win-cmd';
+            line.appendChild(span); line.appendChild(cmdSpan);
+            body.appendChild(line);
+            let i = 0;
+            const tick = () => {
+              if (i >= cmd.length) { body.appendChild(document.createElement('br')); return resolve(); }
+              cmdSpan.textContent += cmd.charAt(i++);
+              line.scrollIntoView({ block: 'end' });
+              setTimeout(tick, random(speed[0], speed[1]));
+            };
+            tick();
           });
-          const finalDelay = lines.length * interval + 240;
-          setTimeout(() => appendLine(t.exitClosing || t.closingTab, "system"), finalDelay);
-          setTimeout(() => {
-            effects.stopAll();
-            audio.stopDrone();
-          }, finalDelay + 600);
-          // Previously: closed the tab. Now we just freeze input and effects.
+
+          const promptPath = 'PS C:' + bs + 'Windows' + bs + 'System32>'; // display: PS C:\\Windows\\System32>
+          const seq = async () => {
+            // Initial header lines (PowerShell)
+            write(state.lang==='ru' ? 'Windows PowerShell' : 'Windows PowerShell');
+            write(state.lang==='ru' ? 'Авторские права (C) Корпорация Майкрософт. Все права защищены.' : 'Copyright (C) Microsoft Corporation. All rights reserved.');
+            write('');
+            write(state.lang==='ru' ? 'Попробуйте новую кроссплатформенную оболочку PowerShell https://aka.ms/pscore6' : 'Try the new cross-platform PowerShell https://aka.ms/pscore6');
+            await typeLine(promptPath, 'Get-ExecutionPolicy');
+            write('RemoteSigned');
+            // Slow typing of the destructive command — to build dread
+            await typeLine(
+              promptPath,
+              'Remove-Item -Path ' + 'C:' + bs + 'Windows' + bs + 'System32' + bs + '*' + ' -Recurse -Force',
+              [100, 160]
+            );
+            // Classic confirmation prompt
+            write('Confirm');
+            const cLine = document.createElement('div');
+            cLine.className = 'win-line';
+            cLine.textContent = 'Are you sure you want to remove the item at ' + '\'' + 'C:' + bs + 'Windows' + bs + 'System32' + bs + '*' + '\'' + '? ' + '[Y] Yes  [A] Yes to All  [N] No (default is "Y"): ';
+            const cSpan = document.createElement('span');
+            cSpan.className = 'win-cmd';
+            cLine.appendChild(cSpan);
+            body.appendChild(cLine);
+            body.scrollTop = body.scrollHeight;
+            // Type 'A' slowly to simulate a choice after a beat
+            await new Promise((resolve) => setTimeout(resolve, 900));
+            await new Promise((resolve) => {
+              let i = 0; const txt = 'A';
+              const tick = () => {
+                if (i >= txt.length) return resolve();
+                cSpan.textContent += txt.charAt(i++);
+                body.scrollTop = body.scrollHeight;
+                setTimeout(tick, random(120, 220));
+              };
+              tick();
+            });
+            // Small delay before output starts, for added dread
+            await new Promise((resolve) => setTimeout(resolve, 900));
+            // Simulate verbose removal stream
+            const samples = [
+              'VERBOSE: Performing the operation "Remove File" on target "' + 'C:' + bs + 'Windows' + bs + 'System32' + bs + 'drivers' + bs + 'etc' + bs + 'hosts' + '".',
+              'VERBOSE: Performing the operation "Remove File" on target "' + 'C:' + bs + 'Windows' + bs + 'System32' + bs + 'config' + bs + 'SAM' + '".',
+              'VERBOSE: Performing the operation "Remove File" on target "' + 'C:' + bs + 'Windows' + bs + 'System32' + bs + 'kernel32.dll' + '".',
+              'VERBOSE: Performing the operation "Remove File" on target "' + 'C:' + bs + 'Windows' + bs + 'System32' + bs + 'ntdll.dll' + '".',
+              'VERBOSE: Performing the operation "Remove File" on target "' + 'C:' + bs + 'Windows' + bs + 'System32' + bs + 'cmd.exe' + '".',
+              'VERBOSE: Performing the operation "Remove File" on target "' + 'C:' + bs + 'Windows' + bs + 'System32' + bs + 'winlogon.exe' + '".',
+              'VERBOSE: Performing the operation "Remove File" on target "' + 'C:' + bs + 'Windows' + bs + 'System32' + bs + 'svchost.exe' + '".',
+              'VERBOSE: Performing the operation "Remove Directory" on target "' + 'C:' + bs + 'Windows' + bs + 'System32' + bs + 'DriverStore' + '".'
+            ];
+            let count = 0;
+            const max = 160 + random(60, 160);
+            const timer = setInterval(() => {
+              const text = samples[count % samples.length];
+              const div = document.createElement('div');
+              div.className = 'win-line verbose';
+              div.textContent = text;
+              body.appendChild(div);
+              body.scrollTop = body.scrollHeight;
+              count++;
+              if (count % 25 === 0) {
+                const p = Math.min(99, Math.floor((count / max) * 100));
+                const prog = document.createElement('div');
+                prog.className = 'win-line progress';
+                prog.textContent = `Progress: ${p}% (${count} items)`;
+                body.appendChild(prog);
+                body.scrollTop = body.scrollHeight;
+              }
+              if (count >= max) {
+                clearInterval(timer);
+                // Final freeze lines
+                write('');
+                const end1 = document.createElement('div'); end1.className = 'win-line'; end1.textContent = 'PS C:' + bs + 'Windows' + bs + 'System32>'; body.appendChild(end1);
+                const end2 = document.createElement('div'); end2.className = 'win-line'; end2.textContent = 'PS C:' + bs + 'Windows>'; body.appendChild(end2);
+                // Freeze the game: leave overlay visible and input disabled
+                try {
+                  // BIOS-like beep sequence
+                  audio.trigger('alarm');
+                  setTimeout(() => audio.trigger('alarm'), 180);
+                  setTimeout(() => audio.trigger('alarm'), 360);
+                  setTimeout(() => audio.scream(1.2), 900);
+                } catch {}
+                // Inform the player and schedule reload
+                write('');
+                write(state.lang === 'ru' ? 'у тебя нет тут власти' : 'you have no power here');
+                try { lockExit(); } catch {}
+                setTimeout(() => { restartAfterExit(overlay); }, 1800);
+              }
+            }, random(14, 28));
+          };
+          seq();
         };
 
         const triggerDoorEnding = () => {
-          if (state.flags.doorEnding || state.flags.godEnding) return;
-          state.flags.doorEnding = true;
-          const t = getTranslations();
-          inputEl.disabled = true;
-          inputEl.blur();
-          effects.setTrip("max");
-          effects.chroma(true);
-          effects.bloom(true);
-          effects.startEyes(24);
-          // flood the entire view with pleading words
-          try { effects.wordsFlood(9000); } catch {}
-          // swap ambient for screams and glass; sprinkle apologies if found
-          audio.stopDrone();
-          setTimeout(() => audio.scream(2.0), 200);
-          setTimeout(() => audio.breakGlass(), 600);
-          setTimeout(() => audio.scream(1.6), 1400);
-          setTimeout(() => audio.scream(2.2), 2600);
-          if (state.flags.apologyHeard || state.flags.angelFeather) {
-            setTimeout(() => audio.apology(1.2), 1000);
-            setTimeout(() => audio.apology(1.4), 2200);
-            setTimeout(() => audio.apology(1.2), 3600);
-          }
-          document.body.classList.add("glitch");
-          const lines = Array.isArray(t.doorEnding) ? t.doorEnding : [];
-          const interval = 420;
-          lines.forEach((line, idx) => {
-            setTimeout(() => appendLine(line, "system"), idx * interval);
-          });
-          const finalDelay = lines.length * interval + 240;
-          setTimeout(() => appendLine(t.doorClosing || t.closingTab, "system"), finalDelay);
-          // Final coda: play the added apology sample with system noise under it
-          setTimeout(() => { try { audio.sorryFinal(); } catch {} }, finalDelay + 200);
-          setTimeout(() => {
-            document.body.classList.remove("glitch");
-            effects.stopAll();
-            audio.stopDrone();
-          }, finalDelay + 800);
-          // Previously: closed the tab. Now we just freeze input and effects.
+          if (state.flags.doorOpened || state.flags.godEnding) return;
+          state.flags.doorOpened = true;
+          try { inputEl.disabled = true; inputEl.blur(); } catch {}
+          // Quiet other effects and play a low drone
+          effects.stopAll();
+          try { audio.stopDrone(); } catch {}
+          try { audio.startDrone('max'); } catch {}
+          // Visual: physical-looking door opens and zooms to fill screen
+          effects.doorOpenZoom();
         };
+
+        
 
         const triggerGodEnding = (type) => {
           if (state.flags.godEnding) return;
@@ -2672,135 +2454,9 @@
           overlayEl.classList.toggle("active", state.flags.eye);
         };
 
-        const tryUnlockDoor = () => {
-          if (state.flags.mirror && state.flags.divineKey) {
-            state.flags.doorReady = true;
-            revealDoor();
-            appendLine(getTranslations().doorHint, "system");
-          }
-        };
+        
 
-        // ==== Boss fight: triggered by `cat door.img` ====
-        const boss = {
-          timer: null,
-          index: 0,
-          tasks: [],
-          perStepMs: 12000,
-        };
-
-        const bossTaskPool = () => {
-          const ru = state.lang === 'ru';
-          return [
-            { id: 'mute', expect: [/^mute$/i], label: ru? 'заглуши канал: mute' : 'mute the channel: mute' },
-            { id: 'raveoff', expect: [/^rave\s+off$/i], label: ru? 'убери строб: rave off' : 'disable strobe: rave off' },
-            { id: 'chromoff', expect: [/^chromatic\s+off$/i], label: ru? 'сними аберрацию: chromatic off' : 'remove aberration: chromatic off' },
-            { id: 'wordsoff', expect: [/^words\s+off$/i], label: ru? 'убери вспышки слов: words off' : 'turn words off: words off' },
-            { id: 'eyesoff', expect: [/^eyes\s+off$/i], label: ru? 'закрой наблюдателей: eyes off' : 'close the watchers: eyes off' },
-            { id: 'killguard', expect: [/^kill\s+(?:core\/system\/)?element-guard\.proc$/i], label: ru? 'убей стража: kill element-guard.proc' : 'kill the guard: kill element-guard.proc' },
-            { id: 'scan', expect: [/^scan$/i], label: ru? 'вскрой шум: scan' : 'expose the noise: scan' },
-            { id: 'clear', expect: [/^clear$/i], label: ru? 'очисти экран: clear' : 'clear the screen: clear' },
-          ];
-        };
-
-        const pickBossTasks = (n = 3) => {
-          const pool = bossTaskPool().slice();
-          const out = [];
-          while (out.length < n && pool.length) {
-            const i = random(0, pool.length - 1);
-            out.push(pool.splice(i, 1)[0]);
-          }
-          return out;
-        };
-
-        const bossStopTimer = () => { if (boss.timer) { clearTimeout(boss.timer); boss.timer = null; } };
-
-        const bossFail = () => {
-          bossStopTimer();
-          state.flags.bossActive = false;
-          // cleanup spawned madness processes
-          try { const sys = resolveNode(['core','system']); if (sys && sys.children) { delete sys.children['virus.proc']; delete sys.children['bug.proc']; } } catch {}
-          // lock terminal with punish
-          appendLine(getTranslations().bossTooSlow, 'error');
-          setTimeout(() => {
-            appendLine(getTranslations().punish, 'error');
-            appendLine(getTranslations().punishLocked, 'system');
-          }, 180);
-          state.flags.punished = true;
-          try { inputEl.disabled = true; inputEl.blur(); } catch {}
-          // visuals
-          effects.meltdown(5000);
-          audio.scream(1.8);
-          effects.strobe(true); setTimeout(() => effects.strobe(false), 1200);
-        };
-
-        const bossSuccess = () => {
-          bossStopTimer();
-          state.flags.bossActive = false;
-          state.flags.bossDefeated = true;
-          // cleanup spawned madness processes
-          try { const sys = resolveNode(['core','system']); if (sys && sys.children) { delete sys.children['virus.proc']; delete sys.children['bug.proc']; } } catch {}
-          appendLine(getTranslations().bossSuccess, 'system');
-          // gentle cool-down
-          effects.stopAll();
-          audio.stopDrone();
-          effects.setTrip('hard');
-          // hint the path forward
-          appendLine(getTranslations().doorHint, 'system');
-        };
-
-        const bossNext = () => {
-          bossStopTimer();
-          if (boss.index >= boss.tasks.length) { bossSuccess(); return; }
-          const t = boss.tasks[boss.index];
-          const hint = getTranslations().bossTask(t.label);
-          // shake + glitch output a bit
-          effects.shake(700);
-          audio.trigger('glitch');
-          appendLine(hint, 'system');
-          boss.timer = setTimeout(bossFail, boss.perStepMs);
-        };
-
-        const startBossFight = () => {
-          if (state.flags.bossActive || state.flags.bossDefeated || state.flags.punished) return;
-          state.flags.bossActive = true;
-          boss.index = 0;
-          boss.tasks = pickBossTasks(3);
-          // spawn temporary hostile processes
-          try {
-            const sys = resolveNode(['core','system']);
-            if (sys && sys.children) {
-              sys.children['virus.proc'] = { type: 'file', name: 'virus.proc', process: 'virus', glitch: true, content: txt('pid: ??\nstate: replicating','pid: ??\nstate: replicating') };
-              sys.children['bug.proc'] = { type: 'file', name: 'bug.proc', process: 'bug', glitch: true, content: txt('pid: ??\nstate: gnawing','pid: ??\nstate: gnawing') };
-            }
-          } catch {}
-          appendLine(getTranslations().bossStart, 'system');
-          // intensify
-          effects.setTrip('max');
-          effects.chroma(true);
-          effects.startEyes(12);
-          effects.burstWords(10);
-          effects.strobe(true); setTimeout(() => effects.strobe(false), 1400);
-          audio.trigger('alarm');
-          bossNext();
-        };
-
-        const handleBossInput = (raw) => {
-          if (!state.flags.bossActive) return false;
-          const t = boss.tasks[boss.index];
-          if (!t) return false;
-          const ok = t.expect.some((re) => re.test(raw));
-          if (ok) {
-            boss.index += 1;
-            bossNext();
-            return true; // handled for boss flow
-          }
-          // sometimes the input distorts during fight
-          if (Math.random() < 0.15) {
-            appendLine(state.lang==='ru' ? 'ввод повреждён. повтори.' : 'input corrupted. retry.', 'error');
-            return true;
-          }
-          return false;
-        };
+        
 
         const randomEvent = () => {
           const stage = state.madnessStage || 0;
@@ -2820,7 +2476,7 @@
           let stage = 0;
           if (state.flags.mirror || state.flags.signalTrace || state.flags.godLog || state.flags.eye || state.flags.idea) stage = Math.max(stage, 1);
           if (state.flags.divineKey || state.flags.godLore || state.flags.connected) stage = Math.max(stage, 2);
-          if (state.flags.doorReady || state.flags.godEnding || state.flags.doorEnding) stage = Math.max(stage, 3);
+          if (state.flags.godEnding) stage = Math.max(stage, 3);
           if (stage > (state.madnessStage || 0)) {
             state.madnessStage = stage;
             if (stage === 1) { effects.setTrip('hard'); audio.trigger('glitch'); }
@@ -2865,6 +2521,47 @@
             const content = restored ? { ru: 'You are fool', en: 'You are fool' } : { ru: ruDefault, en: enDefault };
             u.children['whoami.self'] = { type: 'file', name: 'whoami.self', editable: true, content };
           }
+        };
+
+        // Ensure /.shadow/door.iso exists (spawned on scan)
+        const ensureShadowDoorIso = () => {
+          // Try root .shadow; fallback to /home/user/.shadow
+          let shadow = resolveNode(['.shadow']);
+          if (!shadow || shadow.type !== 'dir') {
+            shadow = resolveNode(['home','user','.shadow']);
+          }
+          if (!shadow || shadow.type !== 'dir') return false;
+          shadow.children = shadow.children || {};
+          if (!shadow.children['door.iso']) {
+            shadow.children['door.iso'] = {
+              type: 'file',
+              name: 'door.iso',
+              content: { ru: 'ISO образ двери. он пульсирует.', en: 'ISO image of a door. it throbs.' },
+              glitch: true,
+            };
+            return true;
+          }
+          return false;
+        };
+
+        // Ensure /door.png exists at root when door is installed
+        const ensureDoorPng = () => {
+          const root = fs; // root dir object
+          if (!root || root.type !== 'dir') return false;
+          root.children = root.children || {};
+          if (!root.children['door.png']) {
+            root.children['door.png'] = {
+              type: 'file',
+              name: 'door.png',
+              content: {
+                ru: 'картинка двери. шипит, шифрованная.',
+                en: 'an image of a door. it hisses, encrypted.'
+              },
+              glitch: true,
+            };
+            return true;
+          }
+          return false;
         };
 
         // Nano-like viewer (read-only by default; specific files may be writable)
@@ -3019,15 +2716,7 @@
                   const f = fileNode; // already resolved
                   if (f && f.type === 'file') {
                     const newText = (state.nano.lines || []).join('\n');
-                    // absorb phrases specifically from whoami.self edits
-                    try {
-                      const isSelf = (f && (f.name === 'whoami.self'));
-                      if (isSelf) {
-                        absorb(newText);
-                        const reply = aiRespond();
-                        appendLine(reply, 'system');
-                      }
-                    } catch {}
+                    // (AI removed: no adaptive reaction to whoami.self edits)
                     f.content = { ru: newText, en: newText };
                     const msg = state.lang==='ru' ? 'сохранено.' : 'written.';
                     setNanoMessage(msg, 1200);
@@ -3204,13 +2893,14 @@
               const hidden = new Set(['gaze','eyes','shake','trip','rave','chromatic','words']);
               const order = [
                 'help','ls','cd','cat','nano','echo','grep','clear','whoami',
-                'open','mount','run','scan','ping','connect','disconnect','confirm','restore',
-                'set','volume','mute','unmute','kill','exit','stop',
+                'mount','run','scan','ping','connect','disconnect','restore',
+                'set','volume','mute','unmute','kill','stop','exit',
                 'rm','chmod','trace','decrypt','inject','think','distill','overwrite','fork','touch','easteregg','42','communion',
                 'pray','worship','chant','sacrifice',
-                'enter','sudo'
+                'sudo'
               ];
-              const keys = Object.keys(commandHandlers).filter(k => !hidden.has(k));
+              let keys = Object.keys(commandHandlers).filter(k => !hidden.has(k));
+              if (isExitLocked()) keys = keys.filter(k => k !== 'exit');
               const rank = new Map(order.map((k, i) => [k, i]));
               const sorted = keys.sort((a, b) => {
                 const ra = rank.has(a) ? rank.get(a) : Number.MAX_SAFE_INTEGER;
@@ -3230,18 +2920,15 @@
               nano: 'nano — открыть файл в редакторе',
               echo: 'echo — вывести текст; echo $TRUTH.',
               clear: 'clear — очистить экран',
-              exit: 'exit — выйти',
               whoami: 'whoami — спросить у системы, кто ты',
               stop: 'stop — остановить визуальные/звуковые эффекты',
               run: 'run — запустить скрипт .sh (run <путь>)',
               scan: 'scan — подсветить скрытое',
               connect: 'connect — попытаться установить связь',
               disconnect: 'disconnect — разорвать связь',
-              enter: 'enter — устарело для двери',
-              open: 'open — открыть артефакт (open <путь> --key <ключ>)',
-              confirm: 'confirm — подтвердить открытие двери',
+              
               mount: 'mount — смонтировать /eye (после mirror.sh)',
-              restore: 'restore memory — собрать память, чтобы разблокировать выход',
+              restore: 'restore memory — собрать память',
               grep: 'grep — поиск шёпотов; скорее эстетика, чем польза',
               kill: 'kill — завершить процесс (kill <имя или путь>)',
               pray: 'pray — открыть божественное зрение',
@@ -3281,18 +2968,15 @@
               nano: 'nano — open file in a editor',
               echo: 'echo — print text; echo $TRUTH.',
               clear: 'clear — clear screen',
-              exit: 'exit — leave',
               whoami: 'whoami — ask the system who you are',
               stop: 'stop — stop visual/audio effects',
               run: 'run — execute .sh script (run <path>)',
               scan: 'scan — reveal hidden things',
               connect: 'connect — try to link',
               disconnect: 'disconnect — sever the link',
-              enter: 'enter — deprecated for the door (use open /door.png --key god/divine.key)',
-              open: 'open — open an artifact (open <path> --key <key>)',
-              confirm: 'confirm — confirm the door opening',
+              
               mount: 'mount — mount /eye (after mirror.sh)',
-              restore: 'restore memory — assemble memory to unlock exit',
+              restore: 'restore memory — assemble memory',
               grep: 'grep — catch whispers; mostly aesthetic',
               kill: 'kill — terminate a process (kill <name or path>)',
               pray: 'pray — open divine vision',
@@ -3326,6 +3010,14 @@
               42: '42 — the answer to your unasked question',
               communion: 'communion listen|kneel|accept|devour|refuse — divine ritual',
             };
+            // add exit help lightly (new simulation) or mark locked
+            if (isExitLocked()) {
+              ru.exit = 'exit — недоступен.';
+              en.exit = 'exit — no longer available.';
+            } else {
+              ru.exit = ru.exit || 'exit — выйти (симуляция завершения с риском)';
+              en.exit = en.exit || 'exit — exit (simulated destructive ending)';
+            }
             const dict = state.lang==='ru' ? ru : en;
             const key = topic;
             if (dict[key]) {
@@ -3596,36 +3288,6 @@
               return;
             }
             const joined = path.join("/");
-            // Boss fight trigger: reading door.img only after prerequisites
-            if (joined === '/door.img' || joined === 'door.img') {
-              if (!state.flags.mirror) { appendLine(getTranslations().needMirror, 'error'); return; }
-              if (!state.flags.fragment01 || !state.flags.fragment02) { appendLine(getTranslations().memoryMissing, 'error'); return; }
-              if (!state.flags.divineKey) { appendLine(getTranslations().needKey, 'error'); return; }
-              startBossFight();
-              return;
-            }
-            if (file.special === "door") {
-              const t = getTranslations();
-              if (!state.flags.doorReady) {
-                const msg = state.flags.mirror || state.flags.divineKey ? t.doorMock : t.doorLocked;
-                appendLine(msg, "error");
-                randomEvent();
-                return;
-              }
-              if (state.flags.doorEnding) {
-                appendLine(t.doorCommand, "system");
-                randomEvent();
-                return;
-              }
-              if (file.content) {
-                const text = file.content[state.lang] || file.content;
-                appendLine(text);
-              }
-              appendLine(t.doorReady, "system");
-              appendLine(t.doorCommand, "system");
-              randomEvent();
-              return;
-            }
             if (file.content) {
               const text = file.content[state.lang] || file.content;
               appendLine(file.glitch ? randomGlitch(text) : text);
@@ -3641,7 +3303,6 @@
             }
             if (joined === "god/divine.key") {
               state.flags.divineKey = true;
-              tryUnlockDoor();
             }
             if (joined === "god/angel.tmp") {
               // awaken angelic presence: swarm of eyes
@@ -3722,8 +3383,69 @@
             if (joined === 'var/log/network.log') state.flags.networkSeen = true;
             if (joined === 'home/user/memory_fragment_01.dat') state.flags.fragment01 = true;
             if (joined === 'home/user/memory_fragment_02.dat') state.flags.fragment02 = true;
-            if (joined === 'god/divine.key') { state.flags.divineKey = true; tryUnlockDoor(); }
+            if (joined === 'god/divine.key') { state.flags.divineKey = true; }
             enterNano(joined, text, file);
+          },
+          open: (args) => {
+            const target = (args[0] || '').trim();
+            if (!target) {
+              appendLine(state.lang === 'ru' ? 'открыть что?' : 'open what?', 'error');
+              return;
+            }
+            // Gate 'open door.png' until both memory fragments are read and mirror.sh was run
+            const wantsDoorPng = target === 'door.png' || /\/door\.png$/.test(target);
+            if (wantsDoorPng) {
+              const ok = (state.flags.fragment01 && state.flags.fragment02 && state.flags.mirror);
+              if (!ok) { appendLine(state.lang === 'ru' ? 'не открывается.' : 'cannot open that.', 'error'); return; }
+            }
+            const path = buildPath(target);
+            const file = ensureFile(path);
+            const joined = '/' + path.join('/');
+            // Handle opening the installer image
+            const isDoorIso = !!file && file.name === 'door.iso';
+            if (isDoorIso) {
+              // Prompt for confirmation: are you sure? [y] [n]
+              appendLine('are you sure? [y] [n]', 'system');
+              state.pendingConfirm = {
+                type: 'openDoorIso',
+                onYes: () => {
+                  // install door: add /door.png and remove the iso
+                  try { ensureDoorPng(); } catch {}
+                  // remove iso
+                  const [parent, name] = resolveParent(path);
+                  if (parent && parent.type === 'dir' && parent.children && parent.children[name]) {
+                    try { delete parent.children[name]; } catch {}
+                  }
+                  state.flags.doorInstalled = true;
+                },
+                onNo: () => { /* noop; player can retry */ },
+              };
+              return;
+            }
+
+            // Handle opening the final door
+            let isDoorPng = (file && file.name === 'door.png') || joined === '/door.png';
+            // Fallback: allow 'open door.png' from anywhere if door is installed
+            if (!isDoorPng && state.flags.doorInstalled && target === 'door.png') {
+              const rootDoor = ensureFile(['door.png']);
+              if (rootDoor) isDoorPng = true;
+            }
+            if (isDoorPng) {
+              if (!state.flags.doorInstalled) {
+                appendLine(state.lang === 'ru' ? 'файл растворился.' : 'file dissolved.', 'error');
+                return;
+              }
+              if (!state.flags.doorDecrypted) {
+                appendLine(state.lang === 'ru' ? 'дверь заперта.' : 'door locked.', 'error');
+                return;
+              }
+              // trigger dedicated door ending
+              triggerDoorEnding();
+              return;
+            }
+
+            // Default: cannot open
+            appendLine(state.lang === 'ru' ? 'не открывается.' : 'cannot open that.', 'error');
           },
           echo: (args, raw) => {
             const text = raw.slice(raw.indexOf("echo") + 4).trim();
@@ -3762,66 +3484,25 @@
             }
           },
           exit: () => {
-            if (!state.flags.exitUnlocked) {
-              appendLine(getTranslations().exitDenied, "error");
+            if (isExitLocked()) {
+              appendLine(state.lang==='ru' ? 'команда недоступна.' : 'command unavailable.', 'error');
               return;
             }
-            appendLine(getTranslations().exitAllow, "system");
-            if (!state.flags.exitEnding) {
-              setTimeout(() => triggerExitEnding(), 420);
-            }
-          },
-          enter: (args) => {
-            const t = getTranslations();
-            const targetRaw = args[0] || "";
-            if (!targetRaw) { appendLine(t.enterUsage, 'error'); return; }
-            const normalized = targetRaw.toLowerCase().replace(/^\.\//, '').replace(/^\/+/, '');
-            if (normalized === 'door' || normalized === 'door.png') {
-              appendLine(t.enterDeprecated, 'system');
-              appendLine(t.doorCommand, 'system');
-              return;
-            }
-            appendLine(t.enterUnknown, 'error');
-          },
-          // New: open flow for the door image
-          open: (args) => {
-            const t = getTranslations();
-            if (!args.length) { appendLine(t.openUsage, 'error'); return; }
-            // parse minimal: open <path> --key <key>
-            const pathArg = args[0];
-            const keyIdx = args.findIndex(x => x === '--key');
-            const keyArg = keyIdx >= 0 ? args[keyIdx+1] : null;
-            const path = buildPath(pathArg);
-            const file = ensureFile(path);
-            const joined = path.join('/');
-            if (!file || (joined !== 'door.png' && joined !== '/door.png')) {
-              appendLine(t.openUsage, 'error');
-              return;
-            }
-            if (!state.flags.eye) { appendLine(t.openNeedEye, 'error'); return; }
-            if (!state.flags.bossDefeated) { appendLine(t.openNeedBoss, 'error'); return; }
-            if (!keyArg) { appendLine(t.openUsage, 'error'); return; }
-            // accept key either as 'divine.key' or 'god/divine.key'
-            const keyPath = buildPath(keyArg.includes('/') ? keyArg : `god/${keyArg}`);
-            const keyFile = ensureFile(keyPath);
-            if (!keyFile || keyFile.name !== 'divine.key') { appendLine(t.openNeedKey, 'error'); return; }
-            state.flags.doorOpened = true;
-            appendLine(t.openDone, 'system');
-          },
-          confirm: () => {
-            const t = getTranslations();
-            if (!state.flags.doorOpened) { appendLine(t.confirmNeedOpen, 'error'); return; }
-            state.flags.doorConfirmed = true;
-            appendLine(t.confirmOK, 'system');
+            // Ask for confirmation
+            appendLine(state.lang==='ru' ? 'вы уверены? [y] [n]' : 'are you sure? [y] [n]', 'system');
+            state.pendingConfirm = {
+              type: 'exitConfirm',
+              onYes: () => { try { triggerExitSim(); } catch {} },
+              onNo: () => { /* noop */ },
+            };
           },
           whoami: () => {
-            // Adaptive identity line based on mind state
-            const line = aiWhoamiLine();
+            const list = (getTranslations().whoami || []);
+            const maxIdx = Math.max(0, list.length - 1);
+            const idx = Math.min(state.whoamiCount, maxIdx);
+            const line = list[idx] || 'whoami';
             typeOut(line, 'system');
-            state.whoamiCount = Math.min(state.whoamiCount + 1, 7);
-            if (state.whoamiCount > 2 && !state.flags.exitUnlocked) {
-              state.flags.exitUnlocked = true;
-            }
+            state.whoamiCount = Math.min(state.whoamiCount + 1, maxIdx);
           },
           connect: () => {
             if (!state.flags.networkSeen) {
@@ -3851,10 +3532,8 @@
                       00:00:07 зеркало моргнуло
                       00:01:13 контроль рассинхронизирован
                       >> протокол: ???.v3 (запись повреждена)
-                      >> запрос: open /door.png --key god/divine.key
                       >> наблюдение: отражения множатся, порождая эхо того, чего не было
-                      >> служебно: объект “door.png” изначально НЕ существовал в этой ветви
-                      >> примечание оператора: кто его добавил – неизвестно. прослеживается инородная рука
+                      >> примечание оператора: источник неизвестен. прослеживается инородная рука
                       >> след: 'depth/void/room0/init.md' (запечатано)
                       `,
                         en: `== signal.trace ==
@@ -3862,10 +3541,8 @@
                       00:00:07 mirror flickered
                       00:01:13 control desynced
                       >> protocol: ???.v3 (record corrupted)
-                      >> request: open /door.png --key god/divine.key
                       >> observation: reflections multiply, birthing echoes of things that never were
-                      >> internal: object “door.png” did NOT originally belong to this branch
-                      >> operator note: unknown hand inserted it. foreign signature detected
+                      >> operator note: unknown hand inserted something. foreign signature detected
                       >> trace: depth/void/room0/init.md (sealed)
                       `,
                       }
@@ -3897,6 +3574,18 @@
             if (!state.flags.divineKey) {
               appendLine(getTranslations().needKey, "error");
               return;
+            }
+            // Special-case: decrypt door.png flips a flag to allow opening
+            const p = buildPath(fileArg);
+            const f = ensureFile(p);
+            const joined = '/' + p.join('/');
+            let isDoorPng = (f && f.name === 'door.png') || joined === '/door.png';
+            if (!isDoorPng && state.flags.doorInstalled && fileArg === 'door.png') {
+              const rootDoor = ensureFile(['door.png']);
+              if (rootDoor) isDoorPng = true;
+            }
+            if (isDoorPng && state.flags.doorInstalled) {
+              state.flags.doorDecrypted = true;
             }
             appendLine(getTranslations().decrypted, "system");
             randomEvent();
@@ -3952,7 +3641,6 @@
                     : "surface smooth. you reflect inward.",
                   "system"
                 );
-                tryUnlockDoor();
                 effects.chroma(true);
               }
             } else {
@@ -3960,12 +3648,16 @@
             }
           },
           scan: () => {
-            if (state.flags.scanned) {
+            // Scan always attempts to reveal, even if already scanned
+            const firstTime = !state.flags.scanned;
+            if (firstTime) {
+              state.flags.scanned = true;
+              appendLine(getTranslations().scanStart, "system");
+            } else {
               appendLine(getTranslations().alreadyScan, "system");
-              return;
             }
-            state.flags.scanned = true;
-            appendLine(getTranslations().scanStart, "system");
+            // Attempt to spawn .shadow/door.iso when prerequisites met
+            try { ensureShadowDoorIso(); } catch {}
             randomEvent();
           },
           mount: (args) => {
@@ -3992,7 +3684,6 @@
             }
             if (state.flags.fragment01 && state.flags.fragment02) {
               appendLine(getTranslations().memoryRestored, "system");
-              state.flags.exitUnlocked = true;
             } else {
               appendLine(getTranslations().memoryMissing, "error");
             }
@@ -4163,7 +3854,7 @@
         };
 
         const interpret = (input) => {
-          if (state.flags.exitEnding || state.flags.doorEnding || state.flags.godEnding || state.flags.punished) {
+          if (state.flags.godEnding || state.flags.doorOpened || state.flags.exitSim) {
             // Terminal is frozen after endings.
             return;
           }
@@ -4175,16 +3866,24 @@
           appendLine(`${getTranslations().prompt(pathToString(state.path))} ${trimmed}`);
           audio.trigger();
 
+          // If a yes/no confirmation is pending, intercept and resolve it
+          if (state.pendingConfirm && typeof state.pendingConfirm === 'object') {
+            const answer = trimmed.toLowerCase();
+            const yes = new Set(['y','yes','д','да']);
+            const no = new Set(['n','no','н','нет']);
+            if (yes.has(answer) || no.has(answer)) {
+              const pc = state.pendingConfirm; state.pendingConfirm = null;
+              if (yes.has(answer) && typeof pc.onYes === 'function') { try { pc.onYes(); } catch {} }
+              if (no.has(answer) && typeof pc.onNo === 'function') { try { pc.onNo(); } catch {} }
+              updateMadness();
+              randomEvent();
+              return;
+            }
+          }
+
           // special phrase handling
           const lower = trimmed.toLowerCase();
-          if (lower === 'i am ready' || lower === 'я готов') {
-            try { absorb(trimmed); } catch {}
-            if (!state.flags.doorOpened) { appendLine(getTranslations().readyNeedConfirm, 'error'); updateMadness(); randomEvent(); return; }
-            if (!state.flags.doorConfirmed) { appendLine(getTranslations().readyNeedConfirm, 'error'); updateMadness(); randomEvent(); return; }
-            appendLine(getTranslations().readyGo, 'system');
-            setTimeout(() => triggerDoorEnding(), 360);
-            return;
-          }
+          
 
           // easter eggs: 'щ' or 'run godmode' -> local rickroll (no external redirect)
           if (lower === 'щ' || lower === 'run godmode') {
@@ -4219,8 +3918,7 @@
             return;
           }
 
-          // Boss fight grabber: during fight input may be absorbed or rejected
-          if (handleBossInput(trimmed)) { updateMadness(); randomEvent(); return; }
+          
 
           // Cosmetic easter eggs (no gameplay effects)
           if (handleEasterEggs(trimmed)) { updateMadness(); return; }
@@ -4229,18 +3927,12 @@
           const command = tokens[0];
           const args = tokens.slice(1);
           const handler = commandHandlers[command];
-          let wasFreeform = false;
           if (handler) {
             handler(args, trimmed);
           } else {
-            // Treat free-form phrases as input to the mind
-            try { absorb(trimmed); } catch {}
-            const line = aiRespond();
-            appendLine(line, 'system');
-            wasFreeform = true;
+            // Unknown command (AI removed)
+            appendLine(getTranslations().unknown, 'error');
           }
-          // Occasionally add an adaptive aside after commands
-          try { maybeAIMutter({ kind: wasFreeform ? 'freeform' : 'command', command, text: trimmed }); } catch {}
           updateMadness();
           randomEvent();
         };
@@ -4441,6 +4133,8 @@
           if (state.started) return;
           state.started = true;
           try { ensureSelfFile(false); } catch {}
+          // If exit was locked in a previous session, reintroduce the special file
+          if (isExitLocked()) { try { ensureDoNotReedFile(); } catch {} }
           setPrompt();
           boot();
         };
