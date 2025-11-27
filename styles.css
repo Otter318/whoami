@@ -490,21 +490,8 @@ body.glitch {
       @keyframes shatterFlash { 0% { filter: invert(1) brightness(2.5); } 100% { filter: none; } }
       body.shatter .terminal { animation: shatterFlash 0.18s steps(2,end) 6; }
 
-      /* God swirl overlay */
-      .fx-god {
-        z-index: 7;
-        opacity: 0;
-        transition: opacity 0.6s ease;
-        background:
-          radial-gradient(circle at 50% 50%, rgba(255,255,255,0.05), rgba(0,0,0,0) 60%),
-          repeating-conic-gradient(from 0deg, rgba(123,255,179,0.12) 0 8deg, rgba(0,0,0,0) 8deg 16deg);
-        mix-blend-mode: screen;
-      }
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-      body.god-vision .fx-god { opacity: 0.75; animation: spin 9s linear infinite; }
-      body.god-vision.trip-max .fx-god { opacity: 0.95; }
+      /* God swirl overlay — disabled */
+      .fx-god { display: none; }
 
       /* Eyes overlay */
       .fx-eyes { z-index: 9; overflow: hidden; }
@@ -685,6 +672,74 @@ body.glitch {
         transform: translate(-50%, -50%);
         box-shadow: 0 0 6px rgba(0,255,255,0.7);
         transition: transform 40ms linear;
+      }
+
+      /* Neon eye overlay (outline + concentric rings) */
+      .neon-eye {
+        position: absolute;
+        inset: 0;
+        z-index: 12;
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .neon-eye svg {
+        width: min(460px, 76vw);
+        height: auto;
+        overflow: visible;
+        filter: saturate(1.3);
+        mix-blend-mode: screen;
+      }
+      .neon-eye .outline,
+      .neon-eye .ring {
+        fill: none;
+        stroke: var(--accent);
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .neon-eye .outline {
+        stroke-width: 12;
+        /* dash values are set from JS to match path length */
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+        filter:
+          drop-shadow(0 0 6px rgba(123,255,179,0.9))
+          drop-shadow(0 0 22px rgba(123,255,179,0.45));
+      }
+      .neon-eye .ring {
+        stroke-width: 8;
+        opacity: 0.95;
+        filter:
+          drop-shadow(0 0 6px rgba(123,255,179,0.85))
+          drop-shadow(0 0 20px rgba(123,255,179,0.45));
+      }
+      .neon-eye .rings {
+        transform-origin: 50% 50%;
+        transform: scaleY(0.05);
+        opacity: 0;
+      }
+      .neon-eye.open .outline { animation: neonEyeOutlineDraw 740ms ease-out forwards; }
+      .neon-eye.open .rings { animation: neonEyeRingsOpen 900ms cubic-bezier(.2,.8,.2,1) 100ms forwards; }
+      .neon-eye.open .ring.outer { animation: neonGlowPulse 2200ms ease-in-out 620ms infinite; }
+
+      @keyframes neonEyeOutlineDraw { to { stroke-dashoffset: 0; } }
+      @keyframes neonEyeRingsOpen {
+        0% { transform: scaleY(0.05); opacity: 0; }
+        60% { transform: scaleY(1.06); opacity: 1; }
+        100% { transform: scaleY(1); opacity: 1; }
+      }
+      @keyframes neonGlowPulse {
+        0%, 100% {
+          filter:
+            drop-shadow(0 0 6px rgba(123,255,179,0.85))
+            drop-shadow(0 0 20px rgba(123,255,179,0.42));
+        }
+        50% {
+          filter:
+            drop-shadow(0 0 12px rgba(123,255,179,1))
+            drop-shadow(0 0 36px rgba(123,255,179,0.65));
+        }
       }
 
       /* Door ending overlay */

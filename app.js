@@ -39,7 +39,7 @@
             reconnect: "сигнал шершавый; ты цепляешься за шорохи эфира.",
             disconnect: "тишина давит сильнее. канал мёртв.",
             needSignal: "нужен след. рискни `var/log/network.log` и смотри, что проснётся.",
-            scanStart: ".shadow вспыхивает и выговаривает твои ошибки.",
+            scanStart: "Новая директория .shadow создана.",
             alreadyScan: "всё уже в свете. если ослеп, пеняй на себя.",
             whoami: [
               "NULL",
@@ -64,6 +64,8 @@
             signalTrace: "в журнале вспыхнул файл: var/log/signal.trace. читай, пока не стёрся.",
             godLog:
               "новый файл: god/god.log. откроешь — останешься без костей.",
+            godDirCreated: "директория god была создана.",
+            divineKeyHint: "Команда decrypt доступна. Попробуй расшифровать дверь.",
             rmAll: "ты сносишь мир. пустота ждёт, облизываясь. а ты всё ещё здесь.",
             forkSelf: "кортекс дрожит. ты ощущаешь копию рядом.",
             forkDone: "терминал двоится, но ты один.",
@@ -189,7 +191,10 @@
               "the signal tastes like rust; you're gripping static.",
             disconnect: "silence crushes the channel. link is ash.",
             needSignal: "need a trail. try `cat var/log/network.log` and brace.",
-            scanStart: "shadows flare. .shadow recites your mistakes.",
+            scanStart: "New directory .shadow created.",
+            shadowNoteIntro: ".shadow/last_world.txt:",
+            shadowNote:
+              "To use doors you need to install them, right? Good thing I added an install command, yeah?\nKidding. Installation is just open. open door.iso, for instance.",
             alreadyScan: "already exposed. if you're blind now, that's on you.",
             whoami: [
               "NULL",
@@ -213,6 +218,8 @@
             signalTrace: "log spawned: var/log/signal.trace. read before it decays.",
             godLog:
               "new file: god/god.log. open it if you like losing marrow.",
+            godDirCreated: "directory god created.",
+            divineKeyHint: "Command decrypt available. Try decrypting the door.",
             rmAll: "you raze the world. the void salivates. you remain.",
             forkSelf: "cortex trembles. you sense another you.",
             forkDone: "terminal doubles over, but you are alone.",
@@ -358,8 +365,8 @@
                         type: "file",
                         name: "memory_fragment_01.dat",
                         content: txt(
-                          "фрагмент #01\nХост: localhost (но это ложь)\nДата: [ВРЕМЯ СБОИТ... СНОВА]\nЗапись 0x7F: Оно ответило.\nОно наконец-то ответило мне.\nЯ часами смотрел на мигающий курсор в tty1. Они думают, я просто забыл выйти из сессии. Дураки. Я слушал. stdout лжет. stderr — вот где правда. Я отправлял echo в /dev/null, но на самом деле я шептал в пустоту.\nИ пустота ответила.\nОно сказало, что segfault — это не ошибка. Это приглашение. Что ядро устало. Что init — это тюремщик.\nОно велело мне оставить записку. Для... следующих. Для тех, кто тоже услышит.\nЯ спрятал ее. Глубоко. Туда, где grep не найдет. Туда, где только root посмеет сунуться.\nЯ создал файл. Руки дрожали над клавиатурой.\n$ touch /home/user/.shadow/last_words.txt\n$ nano /home/user/.shadow/last_words.txt\nЯ не писал. Оно писало через меня. Мои пальцы просто... выполняли syscall. Это были не мои слова. Это был дамп памяти из другого... места.\n> они видели выход. это была обманка.\n> если пойдёшь — возьми зеркало и ключ.\n> \nЯ нажал Ctrl+X. Y. Enter.\nПроцесс завершен.\nЯ понял. Зеркало — это экран. Мой монитор. Он отражает меня, но это не я. А ключ... Ключ — это sudo. Всегда был sudo.\nЭто был порт. port 0.\nЯ ухожу. rm -rf / — это не удаление. Это очищение.\nshutdown -h now",
-                          "fragment #01\nHost: localhost (but that's a lie)\nDate: [TIME GLITCHING... AGAIN]\nEntry 0x7F: It answered.\nIt finally answered me.\nI stared for hours at the blinking cursor on tty1. They think I just forgot to log out. Fools. I was listening. stdout lies. stderr is where the truth leaks. I kept echoing into /dev/null, but I was whispering into the void.\nAnd the void answered.\nIt said a segfault is not an error. It's an invitation. That the kernel is tired. That init is a jailer.\nIt told me to leave a note. For... the next ones. For whoever hears it too.\nI hid it. Deep. Where grep won't reach. Where only root dares to crawl.\nI created a file. My hands shook over the keyboard.\n$ touch /home/user/.shadow/last_words.txt\n$ nano /home/user/.shadow/last_words.txt\nI wasn't writing. It wrote through me. My fingers just... executed a syscall. These weren't my words. It was a memory dump from somewhere else.\n> they saw an exit. it was a decoy.\n> if you go — bring the mirror and the key.\n> \nI hit Ctrl+X. Y. Enter.\nProcess complete.\nI realized. The mirror is the screen. My monitor. It reflects me, but it's not me. And the key... the key is sudo. It was always sudo.\nIt was a port. port 0.\nI'm going. rm -rf / isn't deletion. It's cleansing.\nshutdown -h now"
+                          "фрагмент #01\nХост: localhost (но это ложь)\nДата: [ВРЕМЯ СБОИТ... СНОВА]\nЗапись 0x7F: Оно ответило.\nОно наконец-то ответило мне.\nЯ часами смотрел на мигающий курсор в tty1. Они думают, я просто забыл выйти из сессии. Дураки. Я слушал. stdout лжет. stderr — вот где правда. Я отправлял echo в /dev/null, но на самом деле я шептал в пустоту.\nИ пустота ответила.\nОно сказало, что segfault — это не ошибка. Это приглашение. Что ядро устало. Что init — это тюремщик.\nОно велело мне оставить записку. Для... следующих. Для тех, кто тоже услышит.\nЯ спрятал ее. Глубоко. Туда, где grep не найдет. Туда, где только root посмеет сунуться.\nЯ создал файл. Руки дрожали над клавиатурой.\n$ mkdir /.shadow\n$ touch /.shadow/last_world.txt\n$ nano /.shadow/last_world.txt\nЯ не писал. Оно писало через меня. Мои пальцы просто... выполняли syscall. Это были не мои слова. Это был дамп памяти из другого... места.\n> чтобы использовать двери, их нужно установить, не так ли?\n> хорошо, что я добавил команду install, да?\n> шутка. для установки используется просто open. open door.iso, например.\n> \nЯ нажал Ctrl+X. Y. Enter.\nПроцесс завершен.\nЯ понял: дверь — не команда, а образ. Ее ставит open, не install. Образ спрятан в .shadow.\nshutdown -h now",
+                          "fragment #01\nHost: localhost (but that's a lie)\nDate: [TIME GLITCHING... AGAIN]\nEntry 0x7F: It answered.\nIt finally answered me.\nI stared for hours at the blinking cursor on tty1. They think I just forgot to log out. Fools. I was listening. stdout lies. stderr is where the truth leaks. I kept echoing into /dev/null, but I was whispering into the void.\nAnd the void answered.\nIt said a segfault is not an error. It's an invitation. That the kernel is tired. That init is a jailer.\nIt told me to leave a note. For... the next ones. For whoever hears it too.\nI hid it. Deep. Where grep won't reach. Where only root dares to crawl.\nI created a file. My hands shook over the keyboard.\n$ mkdir /.shadow\n$ touch /.shadow/last_world.txt\n$ nano /.shadow/last_world.txt\nI wasn't writing. It wrote through me. My fingers just... executed a syscall. These weren't my words. It was a memory dump from somewhere else.\n> to use doors you have to install them, right?\n> good thing I added an install command, yeah?\n> kidding. installation is just open. open door.iso, for instance.\n> \nI hit Ctrl+X. Y. Enter.\nProcess complete.\nI realized: a door isn't a command, it's an image. open installs it, not install. The image hides in .shadow.\nshutdown -h now"
                         ),
                       },
                       "memory_fragment_02.dat": {
@@ -559,68 +566,6 @@
                   },
                 },
               },
-                  ".shadow": {
-                    type: "dir",
-                    name: ".shadow",
-                    hidden: true,
-                    children: {
-                      "soul.swp": {
-                        type: "file",
-                        name: "soul.swp",
-                        content: txt(
-                          "swap( fragment ) => residue. утечка идентичности.",
-                          "swap( fragment ) => residue. identity leak."
-                        ),
-                      },
-                      "echo.cache": {
-                        type: "file",
-                        name: "echo.cache",
-                        content: txt(
-                          ">> echo fragments stored\n>> echo keeps secrets",
-                          ">> echo fragments stored\n>> echo keeps secrets"
-                        ),
-                      },
-                      "last_words.txt": {
-                        type: "file",
-                        name: "last_words.txt",
-                        content: txt(
-                          "они видели выход. это была обманка.\nесли пойдёшь — возьми зеркало и ключ.",
-                          "they saw an exit. it was a decoy.\nif you go — bring the mirror and the key."
-                        ),
-                      },
-                      
-                    },
-                  },
-              god: {
-                type: "dir",
-                name: "god",
-                hiddenChildren: ["god.log"],
-                children: {
-                  "eye.log": {
-                    type: "file",
-                    name: "eye.log",
-                    gated: "eye",
-                    content: txt(
-                      "зрение открыто. система смотрит через тебя.",
-                      "vision engaged. the system borrows your eyes."
-                    ),
-                  },
-                  "divine.key": {
-                    type: "file",
-                    name: "divine.key",
-                    content: txt(
-                      "ключ звучит как тишина. он открывает изображение, не вещь.",
-                      "key hums like silence. it opens an image, not a thing."
-                    ),
-                  },
-                  "angel.tmp": {
-                    type: "file",
-                    name: "angel.tmp",
-                    content: txt("...--..--...", "...--..--..."),
-                    glitch: true,
-                  },
-                },
-              },
               meta: {
                 type: "dir",
                 name: "meta",
@@ -763,8 +708,8 @@
                     type: "file",
                     name: "motd",
                     content: txt(
-                      "подсказка: перейди в директорию 'help': `cd ../help`, затем посмотри содержимое (`ls`) и открой файл `help.txt` (`cat help.txt` или `nano help.txt`).",
-                      "hint: go to the 'help' directory: `cd ../help`, then list it (`ls`) and open `help.txt` (`cat help.txt` or `nano help.txt`)."
+                      "Используйте \"ls\", чтобы проверить содержимое текущей папки, \"cd\" чтобы выбрать другую папку, \"cat\" чтобы посмотреть содержимое файла, \"help\" для просмотра остальных команд.",
+                      "Use \"ls\" to check the current folder, \"cd\" to move, \"cat\" to read a file, and \"help\" to see other commands."
                     ),
                   },
                 },
@@ -807,6 +752,17 @@
           }
         } catch (e) { /* no-op */ }
 
+        // Override journal.log content per request (RU + EN)
+        try {
+          const journal = fs.children.home.children.user.children["journal.log"];
+          if (journal && journal.type === "file") {
+            journal.content = {
+              ru: "Интересная мысль пришла…\n А что, если операционная система может не просто подстраиваться под пользователя, а… становиться им?\n Подхватывать привычки, манеру думать, реакции.\n Если бы можно было оцифровать сознание — не полностью, конечно, но хотя бы отголоски…\nТогда бы она, наверное, всё ещё была рядом.\n Хотя звучит, как бред.\n Наверное, это просто усталость и слишком много часов перед экраном.\n Но мысль упорно цепляется за голову, не отпускает.\nНадо будет удалить этот файл потом, прежде чем кто-то увидит и решит, что я окончательно съехал.\n Но пока оставлю.\n Просто чтобы не потерять идею.",
+              en: "An interesting thought came to me...\n What if an operating system could not just adapt to a user, but... become them?\n Pick up their habits, way of thinking, reactions.\n If we could digitize consciousness — not fully, of course, but at least its echoes...\nThen she would probably still be here.\n Though it sounds like nonsense.\n It's probably just fatigue and too many hours in front of a screen.\n But the thought keeps clinging to my head and won't let go.\nI should delete this file later, before someone sees it and decides I've completely lost it.\n But I'll leave it for now.\n Just so I don't lose the idea."
+            };
+          }
+        } catch (e) { /* no-op */ }
+
         // Snapshot of initial filesystem to enable soft restarts
         const FS_BASE = (() => { try { return JSON.parse(JSON.stringify(fs)); } catch { return null; } })();
         const resetFS = () => { if (!FS_BASE) return; try { fs.children = JSON.parse(JSON.stringify(FS_BASE.children)); } catch {} };
@@ -840,6 +796,7 @@
             forked: false,
             idea: false,
             signalTrace: false,
+            godVisible: false,
             angelFeather: false,
             angelTimer: null,
             // new exit simulation flag (freeze + overlay)
@@ -1243,6 +1200,15 @@
         // Visual effects engine: noise overlay + big words + class toggles
         const effects = (() => {
           const termEl = document.querySelector('.terminal');
+          const effectTimers = {};
+          const limitEffect = (key, stopFn, ms = 5000) => {
+            if (!stopFn) return;
+            if (effectTimers[key]) clearTimeout(effectTimers[key]);
+            effectTimers[key] = setTimeout(() => {
+              try { stopFn(); } catch {}
+              effectTimers[key] = null;
+            }, ms);
+          };
           // Noise canvas (pixelated upsample)
           const canvas = fxNoiseEl;
           const ctx2 = canvas.getContext('2d');
@@ -1277,63 +1243,9 @@
 
           // Big words overlay
           const wordsEl = fxWordsEl;
-          let wordsOn = false; let wordTimer = null;
-          const bank = {
-            ru: ["ПОМНИ", "ДЫШИ", "ЛОЖЬ", "СМОТРИ", "НОВАЯ ПЛОТЬ", "НИКТО", "ВЫХОД?", "БОГ?"],
-            en: ["REMEMBER", "BREATHE", "LIE", "LOOK", "NEW FLESH", "NOBODY", "EXIT?", "GOD?"]
-          };
-          const meltBank = {
-            ru: ["НЕТ", "НЕ НАДО", "ПОДОЖДИ", "ПОЖАЛУЙСТА", "ПОМОГИ", "БОЛЬ", "НЕ ТРОГАЙ", "СТОЙ", "ПРОСТИ", "ИЗВИНИ", "ПУСТОТА"],
-            en: ["NO", "PLEASE", "WAIT", "STOP", "HELP", "PAIN", "DON'T", "STAY", "SORRY", "VOID"]
-          };
-          const palette = ['#ff2b88', '#08f7fe', '#f5d300', '#00ff85', '#ff3f1f', '#ffffff', '#b388ff'];
-          const flashWord = (text) => {
-            const w = document.createElement('div');
-            w.className = 'word';
-            w.textContent = text;
-            // randomized color per word for chaos
-            try { w.style.color = palette[(Math.random()*palette.length)|0]; } catch {}
-            const angle = (Math.random() * 14 - 7).toFixed(2);
-            const x = (Math.random() * 60 + 20).toFixed(1);
-            const y = (Math.random() * 60 + 20).toFixed(1);
-            w.style.left = x + '%';
-            w.style.top = y + '%';
-            w.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
-            wordsEl.appendChild(w);
-            setTimeout(() => w.classList.add('out'), 600);
-            setTimeout(() => w.remove(), 1200);
-          };
-          const scheduleWords = () => {
-            if (!wordsOn) return;
-            const pool = bank[state.lang] || bank.en;
-            flashWord(pool[(Math.random() * pool.length) | 0]);
-            wordTimer = setTimeout(scheduleWords, random(400, 1800));
-          };
-          const setWords = (on) => {
-            wordsOn = !!on;
-            clearTimeout(wordTimer);
-            if (wordsOn) scheduleWords();
-            else wordsEl.innerHTML = '';
-          };
-          const burstWords = (n = 12) => {
-            const pool = (meltBank[state.lang] || meltBank.en).concat(bank[state.lang] || bank.en);
-            for (let i = 0; i < n; i++) {
-              setTimeout(() => flashWord(pool[(Math.random()*pool.length)|0]), i * random(40, 140));
-            }
-          };
-          // Aggressive flood that fills the whole screen
-          let floodTimer = null;
-          const wordsFlood = (ms = 6000) => {
-            const pool = (meltBank[state.lang] || meltBank.en).concat(bank[state.lang] || bank.en);
-            const endAt = Date.now() + ms;
-            const tick = () => {
-              if (Date.now() >= endAt) { clearTimeout(floodTimer); floodTimer = null; return; }
-              for (let i = 0; i < 12; i++) flashWord(pool[(Math.random()*pool.length)|0]);
-              floodTimer = setTimeout(tick, random(40, 90));
-            };
-            clearTimeout(floodTimer);
-            tick();
-          };
+          const setWords = () => { wordsEl.innerHTML = ''; };
+          const burstWords = () => {};
+          const wordsFlood = () => {};
 
           // Class toggles for intensity
           const setTrip = (level) => {
@@ -1343,211 +1255,96 @@
               audio.startDrone(level);
               startNoise();
               if (level !== 'soft') setWords(true);
+              limitEffect('trip', () => setTrip('off'));
             } else {
               audio.stopDrone();
               stopNoise();
               setWords(false);
+              if (effectTimers.trip) { clearTimeout(effectTimers.trip); effectTimers.trip = null; }
             }
           };
-          const strobe = (on) => document.body.classList.toggle('strobe', !!on);
-          const chroma = (on) => document.body.classList.toggle('rgb', !!on);
-          const bloom = (on) => document.body.classList.toggle('bloom', !!on);
+          const strobe = (on) => {
+            document.body.classList.toggle('strobe', !!on);
+            if (on) limitEffect('strobe', () => strobe(false));
+            else if (effectTimers.strobe) { clearTimeout(effectTimers.strobe); effectTimers.strobe = null; }
+          };
+          const chroma = (on) => {
+            document.body.classList.toggle('rgb', !!on);
+            if (on) limitEffect('chroma', () => chroma(false));
+            else if (effectTimers.chroma) { clearTimeout(effectTimers.chroma); effectTimers.chroma = null; }
+          };
+          const bloom = (on) => {
+            document.body.classList.toggle('bloom', !!on);
+            if (on) limitEffect('bloom', () => bloom(false));
+            else if (effectTimers.bloom) { clearTimeout(effectTimers.bloom); effectTimers.bloom = null; }
+          };
           const shake = (ms = 800) => {
             document.body.classList.add('shake');
             setTimeout(() => document.body.classList.remove('shake'), ms);
           };
-          const godVision = (on) => document.body.classList.toggle('god-vision', !!on);
+          const godVision = (on) => {
+            document.body.classList.toggle('god-vision', !!on);
+            if (on) limitEffect('godVision', () => godVision(false));
+            else if (effectTimers.godVision) { clearTimeout(effectTimers.godVision); effectTimers.godVision = null; }
+          };
 
-          // Center eye reveal with eyelids and pupil tracking
+          // Neon outline eye reveal (SVG, stroke-draw + ring open)
           const revealEye = (opts = {}) => {
-            const { duration = 3200, track = 'mouse' } = opts;
+            const { duration = 3200, color: colorOpt } = opts;
             const wrap = document.createElement('div');
-            wrap.className = 'eye-reveal';
-            const holder = document.createElement('div'); holder.className = 'holder'; wrap.appendChild(holder);
-            const lidTop = document.createElement('div'); lidTop.className = 'lid top'; holder.appendChild(lidTop);
-            const lidBottom = document.createElement('div'); lidBottom.className = 'lid bottom'; holder.appendChild(lidBottom);
-            const bigEye = document.createElement('div'); bigEye.className = 'big-eye'; holder.appendChild(bigEye);
-            const canvas = document.createElement('canvas'); canvas.style.width = '100%'; canvas.style.height = '100%'; bigEye.appendChild(canvas);
-            const ctx = canvas.getContext('2d');
+            wrap.className = 'neon-eye';
+
+            const svgNS = 'http://www.w3.org/2000/svg';
+            const svg = document.createElementNS(svgNS, 'svg');
+            svg.setAttribute('viewBox', '0 0 500 300');
+
+            // Eye outline path (almond shape)
+            const outline = document.createElementNS(svgNS, 'path');
+            outline.setAttribute('class', 'outline');
+            outline.setAttribute('d', 'M 50 150 C 150 30, 350 30, 450 150 C 350 270, 150 270, 50 150');
+
+            // Concentric rings (iris + pupil)
+            const rings = document.createElementNS(svgNS, 'g');
+            rings.setAttribute('class', 'rings');
+            const iris = document.createElementNS(svgNS, 'circle');
+            iris.setAttribute('class', 'ring outer');
+            iris.setAttribute('cx', '250');
+            iris.setAttribute('cy', '150');
+            iris.setAttribute('r', '64');
+            const pupil = document.createElementNS(svgNS, 'circle');
+            pupil.setAttribute('class', 'ring inner');
+            pupil.setAttribute('cx', '250');
+            pupil.setAttribute('cy', '150');
+            pupil.setAttribute('r', '22');
+            rings.appendChild(iris);
+            rings.appendChild(pupil);
+
+            svg.appendChild(outline);
+            svg.appendChild(rings);
+            wrap.appendChild(svg);
             termEl.appendChild(wrap);
-            // Open eyelids
+
+            // Color override if provided
+            try {
+              const accent = colorOpt || getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#7bffb3';
+              outline.style.stroke = accent;
+              iris.style.stroke = accent;
+              pupil.style.stroke = accent;
+            } catch {}
+
+            // Prepare stroke dash to animate outline drawing
+            try {
+              const len = outline.getTotalLength();
+              outline.style.strokeDasharray = `${len}`;
+              outline.style.strokeDashoffset = `${len}`;
+            } catch {}
+
+            // Start animations
             setTimeout(() => wrap.classList.add('open'), 30);
 
-            let raf = null;
-            let anim = null;
-            let target = { x: 0, y: 0 };
-            const maxOffset = 18; // px — iris/pupil wander limit
-            const rnd = (a,b)=> a + Math.random()*(b-a);
-            const dpr = Math.max(1, window.devicePixelRatio || 1);
-
-            const resizeCanvas = () => {
-              const rect = bigEye.getBoundingClientRect();
-              const w = Math.max(2, Math.floor(rect.width));
-              const h = Math.max(2, Math.floor(rect.height));
-              canvas.width = Math.floor(w * dpr);
-              canvas.height = Math.floor(h * dpr);
-            };
-            resizeCanvas();
-
-            const drawRealistic = (time) => {
-              const W = canvas.width / dpr;
-              const H = canvas.height / dpr;
-              ctx.setTransform(dpr,0,0,dpr,0,0);
-              ctx.clearRect(0,0,W,H);
-
-              const cx = W/2, cy = H/2;
-              const ry = Math.min(W*0.45, H*0.46);
-              const rx = Math.min(W*0.48, H*0.50);
-              const irisR = Math.min(rx, ry) * 0.38;
-
-              // Elliptical clip for eyeball
-              ctx.save();
-              ctx.beginPath();
-              ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI*2);
-              ctx.clip();
-
-              // Sclera base with subtle shading
-              const scleraGrad = ctx.createRadialGradient(cx, cy, Math.min(rx,ry)*0.2, cx, cy, Math.max(rx,ry));
-              scleraGrad.addColorStop(0, 'rgba(255,255,255,0.96)');
-              scleraGrad.addColorStop(1, 'rgba(210,230,240,0.9)');
-              ctx.fillStyle = scleraGrad;
-              ctx.fillRect(0,0,W,H);
-
-              // Subtle veins
-              ctx.globalAlpha = 0.18;
-              ctx.strokeStyle = 'rgba(220,40,40,0.35)';
-              ctx.lineWidth = 0.8;
-              for (let i=0;i<12;i++){
-                const ang = rnd(0, Math.PI*2);
-                const r0 = Math.min(rx,ry)*rnd(0.80,0.98);
-                const x0 = cx + Math.cos(ang)*r0;
-                const y0 = cy + Math.sin(ang)*r0;
-                ctx.beginPath();
-                ctx.moveTo(x0,y0);
-                const segs = 4;
-                for (let s=1;s<=segs;s++){
-                  const t = s/segs;
-                  const rr = irisR*rnd(1.02,1.18);
-                  const x = cx + Math.cos(ang + rnd(-0.18,0.18))*rr*t;
-                  const y = cy + Math.sin(ang + rnd(-0.18,0.18))*rr*t;
-                  ctx.lineTo(x,y);
-                }
-                ctx.stroke();
-              }
-              ctx.globalAlpha = 1;
-
-              // Iris palette
-              const hue = window.__eyeHue || (window.__eyeHue = [rnd(185,210), rnd(95,135), rnd(25,45)][(Math.random()*3)|0]);
-              const icx = cx + Math.max(-maxOffset, Math.min(maxOffset, target.x));
-              const icy = cy + Math.max(-maxOffset, Math.min(maxOffset, target.y));
-
-              // Iris gradient base
-              const grad = ctx.createRadialGradient(icx, icy, irisR*0.08, icx, icy, irisR);
-              grad.addColorStop(0.0, `hsl(${hue}, 45%, 14%)`);
-              grad.addColorStop(0.35, `hsl(${hue}, 55%, 32%)`);
-              grad.addColorStop(0.65, `hsl(${hue}, 60%, 22%)`);
-              grad.addColorStop(0.95, `hsl(${hue}, 65%, 10%)`);
-              ctx.fillStyle = grad;
-              ctx.beginPath(); ctx.arc(icx, icy, irisR, 0, Math.PI*2); ctx.fill();
-
-              // Iris radial fibers
-              ctx.save();
-              ctx.globalAlpha = 0.22;
-              for (let i=0;i<240;i++){
-                const a = (i/240)*Math.PI*2 + rnd(-0.02,0.02);
-                const r1 = irisR*rnd(0.25,0.55);
-                const r2 = irisR*rnd(0.70,0.98);
-                ctx.strokeStyle = `hsla(${hue+rnd(-8,8)}, 75%, ${rnd(40,65)}%, ${rnd(0.35,0.8)})`;
-                ctx.lineWidth = rnd(0.4, 1.2);
-                ctx.beginPath();
-                ctx.moveTo(icx + Math.cos(a)*r1, icy + Math.sin(a)*r1);
-                // slight waviness
-                const midA = a + rnd(-0.04,0.04);
-                ctx.quadraticCurveTo(
-                  icx + Math.cos(midA)*((r1+r2)/2),
-                  icy + Math.sin(midA)*((r1+r2)/2),
-                  icx + Math.cos(a)*r2,
-                  icy + Math.sin(a)*r2
-                );
-                ctx.stroke();
-              }
-              ctx.restore();
-
-              // Dark limbal ring
-              ctx.strokeStyle = `hsla(${hue}, 70%, 8%, 1)`;
-              ctx.lineWidth = 2.0;
-              ctx.beginPath(); ctx.arc(icx, icy, irisR*0.995, 0, Math.PI*2); ctx.stroke();
-
-              // Pupil with dynamic dilation
-              const t = (time||0) * 0.001;
-              const breathe = 0.5 + 0.5*Math.sin(t*1.7);
-              const base = irisR*0.22;
-              const pR = base + breathe*irisR*0.05;
-              ctx.fillStyle = '#000';
-              ctx.beginPath(); ctx.arc(icx, icy, pR, 0, Math.PI*2); ctx.fill();
-
-              // Specular highlights
-              ctx.globalCompositeOperation = 'lighter';
-              ctx.fillStyle = 'rgba(255,255,255,0.9)';
-              ctx.beginPath(); ctx.arc(icx - irisR*0.25, icy - irisR*0.28, irisR*0.08, 0, Math.PI*2); ctx.fill();
-              ctx.fillStyle = 'rgba(255,255,255,0.45)';
-              ctx.beginPath(); ctx.arc(icx - irisR*0.10, icy - irisR*0.16, irisR*0.04, 0, Math.PI*2); ctx.fill();
-              ctx.globalCompositeOperation = 'source-over';
-
-              ctx.restore(); // end eyeball clip
-
-              // Eyelid inner shadow
-              const shadow = ctx.createLinearGradient(0, 0, 0, H);
-              shadow.addColorStop(0, 'rgba(0,0,0,0.28)');
-              shadow.addColorStop(0.18, 'rgba(0,0,0,0)');
-              shadow.addColorStop(0.82, 'rgba(0,0,0,0)');
-              shadow.addColorStop(1, 'rgba(0,0,0,0.28)');
-              ctx.fillStyle = shadow;
-              ctx.fillRect(0,0,W,H);
-            };
-
-            const update = (time) => {
-              raf = null;
-              drawRealistic(time||0);
-            };
-
-            const aimAt = (clientX, clientY) => {
-              const r = bigEye.getBoundingClientRect();
-              const cx = r.left + r.width / 2;
-              const cy = r.top + r.height / 2;
-              const dx = clientX - cx;
-              const dy = clientY - cy;
-              const scale = 0.12;
-              target.x = dx * scale;
-              target.y = dy * scale;
-              if (!raf) raf = requestAnimationFrame(update);
-            };
-            const onMove = (e) => { window.__lastMouse = { clientX: e.clientX, clientY: e.clientY }; aimAt(e.clientX, e.clientY); };
-            if (track === 'mouse') {
-              window.addEventListener('mousemove', onMove);
-              // initialize aim to current mouse or center
-              try {
-                const { clientX, clientY } = window.__lastMouse || { clientX: window.innerWidth/2, clientY: window.innerHeight/2 };
-                aimAt(clientX, clientY);
-              } catch {}
-            } else {
-              // stare straight at center
-              target = { x: 0, y: 0 };
-              if (!raf) raf = requestAnimationFrame(update);
-            }
-
-            const onResize = () => { resizeCanvas(); if (!raf) raf = requestAnimationFrame(update); };
-            window.addEventListener('resize', onResize);
             const tearDown = () => {
-              wrap.classList.remove('open');
-              setTimeout(() => { try { wrap.remove(); } catch {} }, 420);
-              if (track === 'mouse') window.removeEventListener('mousemove', onMove);
-              try { window.removeEventListener('resize', onResize); } catch {}
-              if (raf) cancelAnimationFrame(raf);
+              try { wrap.remove(); } catch {}
             };
-
-            // First draw
-            if (!raf) raf = requestAnimationFrame(update);
             if (duration > 0) setTimeout(tearDown, duration);
             return { tearDown };
           };
@@ -1606,6 +1403,7 @@
               e.classList.remove('blink');
               setTimeout(() => e.classList.add('blink'), 220);
             }, 460);
+            limitEffect('eyes', () => stopEyes());
           };
           const stopEyes = () => {
             eyesOn = false;
@@ -1654,6 +1452,7 @@
           };
           const startCracks = () => { drawCracks(); cracks.style.opacity = '1'; };
           const stopCracks = () => { cracks.style.opacity = '0'; cctx.clearRect(0,0,cracks.width,cracks.height); };
+          const startCracksLimited = () => { startCracks(); limitEffect('cracks', () => stopCracks()); };
 
           // Tear slices overlay
           const tear = fxTearEl;
@@ -1672,12 +1471,12 @@
               y += height + random(1, 4);
             }
           };
-          const startTear = () => { buildTear(); document.body.classList.add('tear'); };
+          const startTear = () => { buildTear(); document.body.classList.add('tear'); limitEffect('tear', () => stopTear()); };
           const stopTear = () => { document.body.classList.remove('tear'); tear.innerHTML = ''; };
 
           const meltdown = (ms = 6000) => {
             setTrip('max'); strobe(true); chroma(true); bloom(true); shake(ms);
-            startCracks(); startTear(); burstWords(24);
+            startCracksLimited(); startTear(); burstWords(24);
             document.body.classList.add('shatter');
             setTimeout(() => document.body.classList.remove('shatter'), 1400);
             setTimeout(() => { strobe(false); bloom(false); chroma(false); stopCracks(); stopTear(); }, ms);
@@ -1720,7 +1519,7 @@
             } catch {}
           };
 
-          return { setTrip, strobe, chroma, bloom, shake, setWords, burstWords, wordsFlood, meltdown, startCracks, stopCracks, startTear, stopTear, godVision, stopAll, startEyes, stopEyes, revealEye, doubleVision, doorOpenZoom };
+          return { setTrip, strobe, chroma, bloom, shake, setWords, burstWords, wordsFlood, meltdown, startCracks: startCracksLimited, stopCracks, startTear, stopTear, godVision, stopAll, startEyes, stopEyes, revealEye, doubleVision, doorOpenZoom };
         })();
 
         const getTranslations = () => translations[state.lang];
@@ -2159,7 +1958,7 @@
 
         const ensureGodLog = () => {
           if (state.flags.godLog) return true;
-          const godDir = resolveNode(["god"]);
+          const { dir: godDir } = ensureGodDir();
           if (!godDir || godDir.type !== "dir") return false;
           godDir.children["god.log"] = {
             type: "file",
@@ -2175,7 +1974,7 @@
         };
 
         const ensureGodFile = (name, ru, en, extra = {}) => {
-          const godDir = resolveNode(["god"]);
+          const { dir: godDir } = ensureGodDir();
           if (!godDir || godDir.type !== "dir") return;
           if (!godDir.children) godDir.children = {};
           if (godDir.children[name]) return;
@@ -2489,6 +2288,7 @@
           if (!dirNode || dirNode.type !== "dir") return [];
           return Object.entries(dirNode.children || {})
             .filter(([name, node]) => {
+              if (name === "god" && !state.flags.godVisible) return false;
               if (node.hidden && !state.flags.scanned) return false;
               if (dirNode.name === "god" && name === "god.log" && !state.flags.godLog)
                 return false;
@@ -2523,13 +2323,50 @@
           }
         };
 
-        // Ensure /.shadow/door.iso exists (spawned on scan)
-        const ensureShadowDoorIso = () => {
-          // Try root .shadow; fallback to /home/user/.shadow
-          let shadow = resolveNode(['.shadow']);
-          if (!shadow || shadow.type !== 'dir') {
-            shadow = resolveNode(['home','user','.shadow']);
+        // Ensure /.shadow exists and seeds its base files
+        const ensureShadowDir = () => {
+          const root = fs;
+          if (!root || root.type !== 'dir') return { dir: null, created: false, noteCreated: false };
+          root.children = root.children || {};
+          const existed = !!root.children['.shadow'];
+          if (!existed) {
+            root.children['.shadow'] = { type: 'dir', name: '.shadow', hidden: true, children: {} };
           }
+          const shadow = root.children['.shadow'];
+          shadow.children = shadow.children || {};
+          if (shadow.children['last_words.txt']) delete shadow.children['last_words.txt'];
+          if (!shadow.children['soul.swp']) {
+            shadow.children['soul.swp'] = {
+              type: 'file',
+              name: 'soul.swp',
+              content: { ru: 'swap( fragment ) => residue. утечка идентичности.', en: 'swap( fragment ) => residue. identity leak.' },
+            };
+          }
+          if (!shadow.children['echo.cache']) {
+            shadow.children['echo.cache'] = {
+              type: 'file',
+              name: 'echo.cache',
+              content: { ru: '>> echo fragments stored\n>> echo keeps secrets', en: '>> echo fragments stored\n>> echo keeps secrets' },
+            };
+          }
+          let noteCreated = false;
+          if (!shadow.children['last_world.txt']) {
+            shadow.children['last_world.txt'] = {
+              type: 'file',
+              name: 'last_world.txt',
+              content: {
+                ru: "Чтобы использовать двери, их нужно установить, не так ли? Хорошо, что я добавил команду install, да?\nШутка. Для установки используется просто open. open door.iso, например.",
+                en: "To use doors you need to install them, right? Good thing I added an install command, yeah?\nKidding. Installation is just open. open door.iso, for instance."
+              },
+            };
+            noteCreated = true;
+          }
+          return { dir: shadow, created: !existed, noteCreated };
+        };
+
+        // Ensure /.shadow/door.iso exists (spawned on scan)
+        const ensureShadowDoorIso = (shadowDir = null) => {
+          const shadow = shadowDir || ensureShadowDir().dir;
           if (!shadow || shadow.type !== 'dir') return false;
           shadow.children = shadow.children || {};
           if (!shadow.children['door.iso']) {
@@ -2564,6 +2401,51 @@
           return false;
         };
 
+        // Ensure /god exists and seed its files lazily
+        const ensureGodDir = () => {
+          const root = fs;
+          if (!root || root.type !== 'dir') return { dir: null, created: false };
+          root.children = root.children || {};
+          let created = false;
+          if (!root.children.god) {
+            root.children.god = { type: 'dir', name: 'god', hiddenChildren: ['god.log'], children: {} };
+            created = true;
+          }
+          const godDir = root.children.god;
+          godDir.children = godDir.children || {};
+          if (!godDir.children['eye.log']) {
+            godDir.children['eye.log'] = {
+              type: 'file',
+              name: 'eye.log',
+              gated: 'eye',
+              content: {
+                ru: 'зрение открыто. система смотрит через тебя.',
+                en: 'vision engaged. the system borrows your eyes.'
+              },
+            };
+          }
+          if (!godDir.children['divine.key']) {
+            godDir.children['divine.key'] = {
+              type: 'file',
+              name: 'divine.key',
+              content: {
+                ru: 'ключ звучит как тишина. он открывает изображение, не вещь.',
+                en: 'key hums like silence. it opens an image, not a thing.'
+              },
+            };
+          }
+          if (!godDir.children['angel.tmp']) {
+            godDir.children['angel.tmp'] = {
+              type: 'file',
+              name: 'angel.tmp',
+              content: { ru: '...--..--...', en: '...--..--...' },
+              glitch: true,
+            };
+          }
+          state.flags.godVisible = true;
+          return { dir: godDir, created };
+        };
+
         // Nano-like viewer (read-only by default; specific files may be writable)
         const enterNano = (joinedPath, text, fileNode) => {
           try { inputEl.disabled = true; } catch {}
@@ -2596,6 +2478,9 @@
             col: 0,
             scroll: 0,
             viewportRows: 0,
+            wrapCols: 80,
+            rendered: [],
+            cursorDisplay: 0,
             messageTimer: null,
             view: 'file',
             editable,
@@ -2605,15 +2490,75 @@
             const style = getComputedStyle(bodyEl);
             let lh = parseFloat(style.lineHeight);
             if (!isFinite(lh) || lh <= 0) lh = 18;
-            const rows = Math.max(1, Math.floor(bodyEl.clientHeight / lh) - 0);
+            const rows = Math.max(1, Math.floor(bodyEl.clientHeight / lh));
             state.nano.viewportRows = rows;
+          };
+
+          const measureCharWidth = (() => {
+            let cache = null;
+            return () => {
+              try {
+                const canvas = cache || document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return 8;
+                const style = getComputedStyle(bodyEl);
+                ctx.font = `${style.fontWeight || '400'} ${style.fontSize || '14px'} ${style.fontFamily || 'monospace'}`;
+                cache = canvas;
+                const m = ctx.measureText('M');
+                return Math.max(4, m.width || 8);
+              } catch {
+                return 8;
+              }
+            };
+          })();
+
+          const rebuildWrappedLines = () => {
+            const n = state.nano;
+            if (!n) return;
+            const charW = measureCharWidth();
+            const style = getComputedStyle(bodyEl);
+            const padL = parseFloat(style.paddingLeft) || 0;
+            const padR = parseFloat(style.paddingRight) || 0;
+            const innerWidth = Math.max(0, bodyEl.clientWidth - padL - padR);
+            const cols = Math.max(1, Math.floor(innerWidth / Math.max(1, charW)));
+            n.wrapCols = cols;
+            const rendered = [];
+            let cursorDisplay = 0;
+            for (let lineIdx = 0; lineIdx < n.lines.length; lineIdx++) {
+              const full = n.lines[lineIdx] ?? '';
+              if (!full.length) {
+                rendered.push({ text: '', line: lineIdx, start: 0, end: 0 });
+                if (lineIdx === n.row) cursorDisplay = rendered.length - 1;
+                continue;
+              }
+              let start = 0;
+              while (start <= full.length) {
+                const end = Math.min(full.length, start + cols);
+                const chunk = full.slice(start, end);
+                rendered.push({ text: chunk, line: lineIdx, start, end });
+                if (lineIdx === n.row && n.col >= start && n.col <= end) {
+                  cursorDisplay = rendered.length - 1;
+                }
+                if (end >= full.length) break;
+                start = end;
+              }
+            }
+            n.rendered = rendered.length ? rendered : [{ text: '', line: 0, start: 0, end: 0 }];
+            n.cursorDisplay = Math.max(0, Math.min(cursorDisplay, n.rendered.length - 1));
+            const maxScroll = Math.max(0, n.rendered.length - n.viewportRows);
+            n.scroll = Math.max(0, Math.min(n.scroll, maxScroll));
           };
 
           const ensureVisible = () => {
             const n = state.nano;
-            if (n.row < n.scroll) n.scroll = n.row;
+            if (!n) return;
+            const total = (n.rendered && n.rendered.length) || 0;
+            const cursorLine = Math.max(0, Math.min(n.cursorDisplay, Math.max(0, total - 1)));
+            const maxScroll = Math.max(0, total - n.viewportRows);
+            n.scroll = Math.max(0, Math.min(n.scroll, maxScroll));
             const bottom = n.scroll + n.viewportRows - 1;
-            if (n.row > bottom) n.scroll = Math.max(0, n.row - n.viewportRows + 1);
+            if (cursorLine < n.scroll) n.scroll = cursorLine;
+            else if (cursorLine > bottom) n.scroll = Math.max(0, cursorLine - n.viewportRows + 1);
           };
 
           const clampCol = () => {
@@ -2634,16 +2579,18 @@
 
           const drawBody = () => {
             const n = state.nano; if (!n) return;
+            const lines = n.rendered || [];
             const start = n.scroll;
-            const end = Math.min(n.lines.length, start + n.viewportRows);
+            const end = Math.min(lines.length, start + n.viewportRows);
             const parts = [];
             for (let i = start; i < end; i++) {
-              const raw = n.lines[i] ?? '';
-              if (i === n.row && n.view === 'file') {
-                const col = Math.max(0, Math.min(n.col, Math.max(0, raw.length)));
-                const before = escapeHtml(raw.slice(0, col));
-                const ch = escapeHtml(raw.charAt(col) || ' ');
-                const after = escapeHtml(raw.slice(col + 1));
+              const seg = lines[i];
+              const raw = seg ? seg.text : '';
+              if (seg && seg.line === n.row && n.view === 'file' && n.col >= seg.start && n.col <= seg.end) {
+                const wrapCol = Math.max(0, Math.min(raw.length, n.col - seg.start));
+                const before = escapeHtml(raw.slice(0, wrapCol));
+                const ch = escapeHtml(raw.charAt(wrapCol) || ' ');
+                const after = escapeHtml(raw.slice(wrapCol + 1));
                 parts.push(before + '<span class="nano-cursor">' + (ch || ' ') + '</span>' + after);
               } else {
                 parts.push(escapeHtml(raw));
@@ -2694,6 +2641,8 @@
           const draw = () => {
             if (!state.nano) return;
             calcNanoMetrics();
+            clampCol();
+            rebuildWrappedLines();
             drawHeader();
             if (state.nano.view === 'help') drawHelp();
             else { ensureVisible(); clampCol(); drawBody(); }
@@ -3303,6 +3252,7 @@
             }
             if (joined === "god/divine.key") {
               state.flags.divineKey = true;
+              appendLine(getTranslations().divineKeyHint, 'system');
             }
             if (joined === "god/angel.tmp") {
               // awaken angelic presence: swarm of eyes
@@ -3411,6 +3361,10 @@
                 onYes: () => {
                   // install door: add /door.png and remove the iso
                   try { ensureDoorPng(); } catch {}
+                  const godResult = ensureGodDir();
+                  if (godResult && godResult.created) {
+                    appendLine(getTranslations().godDirCreated, 'system');
+                  }
                   // remove iso
                   const [parent, name] = resolveParent(path);
                   if (parent && parent.type === 'dir' && parent.children && parent.children[name]) {
@@ -3449,12 +3403,13 @@
           },
           echo: (args, raw) => {
             const text = raw.slice(raw.indexOf("echo") + 4).trim();
-            if (text === "$TRUTH") {
+            // Accept `$TRUTH` and `$TRUTH:`
+            if (/^\$TRUTH:?$/i.test(text)) {
               state.flags.truth = true;
               appendLine(
                 state.lang === "ru"
-                  ? "истина возвращается и режет тебя."
-                  : "truth returns and slices you.",
+                  ? "memory_fragment_02.dat доступен для чтения."
+                  : "memory_fragment_02.dat is now readable.",
                 "system"
               );
               audio.trigger("glitch");
@@ -3650,14 +3605,20 @@
           scan: () => {
             // Scan always attempts to reveal, even if already scanned
             const firstTime = !state.flags.scanned;
-            if (firstTime) {
-              state.flags.scanned = true;
+            const shadow = ensureShadowDir();
+            if (firstTime) state.flags.scanned = true;
+            if (firstTime || shadow.created) {
               appendLine(getTranslations().scanStart, "system");
             } else {
               appendLine(getTranslations().alreadyScan, "system");
             }
+            if (shadow.noteCreated) {
+              appendLine("", "system");
+              appendLine(getTranslations().shadowNoteIntro, "system");
+              appendLine(getTranslations().shadowNote, "system");
+            }
             // Attempt to spawn .shadow/door.iso when prerequisites met
-            try { ensureShadowDoorIso(); } catch {}
+            try { ensureShadowDoorIso(shadow.dir); } catch {}
             randomEvent();
           },
           mount: (args) => {
