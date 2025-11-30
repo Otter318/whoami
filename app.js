@@ -38,6 +38,10 @@
             locked: "доступ запрещён. даже твоё имя не подходит.",
             reconnect: "сигнал шершавый; ты цепляешься за шорохи эфира.",
             disconnect: "тишина давит сильнее. канал мёртв.",
+            fsSplit: "Проводник и терминал смотрят в разные деревья. Выполни `connect self`, если хочешь свести их вместе.",
+            fsMerged: "Деревья срослись. Проводник и терминал смотрят в одно зеркало.",
+            fsAlready: "Уже слиты. Слушайте одинаково.",
+            fsDesktopOnly: "Не доступно.",
             needSignal: "нужен след. рискни `var/log/network.log` и смотри, что проснётся.",
             scanStart: "Новая директория .shadow создана.",
             alreadyScan: "всё уже в свете. если ослеп, пеняй на себя.",
@@ -190,6 +194,10 @@
             reconnect:
               "the signal tastes like rust; you're gripping static.",
             disconnect: "silence crushes the channel. link is ash.",
+            fsSplit: "Explorer and terminal stare at different trees. Run `connect self` to stitch them together.",
+            fsMerged: "Trees fused. Explorer and terminal share one mirror.",
+            fsAlready: "Already merged. They breathe in sync.",
+            fsDesktopOnly: "Access denied.",
             needSignal: "need a trail. try `cat var/log/network.log` and brace.",
             scanStart: "New directory .shadow created.",
             shadowNoteIntro: ".shadow/last_world.txt:",
@@ -319,6 +327,25 @@
             ],
             closingTab: "channel tears. the terminal freezes. the cursor goes dark.",
           },
+        };
+
+        // Windows-style cmd helpers for the desktop phase
+        const cmdPathFromSegments = (segments = []) => {
+          const parts = Array.isArray(segments) ? segments.filter(Boolean) : [];
+          const suffix = parts.length ? `\\${parts.join("\\")}` : "";
+          return `C:\\${suffix}`;
+        };
+
+        const normalizeCmdArg = (arg) => {
+          if (!arg) return arg;
+          let value = String(arg || "");
+          const hasDrive = /^[a-z]:/i.test(value.trim());
+          value = value.replace(/\\/g, "/");
+          if (hasDrive) value = value.slice(2);
+          if (hasDrive || value.startsWith("/")) {
+            value = "/" + value.replace(/^\/+/, "");
+          }
+          return value;
         };
 
         const fs = (() => {
@@ -719,6 +746,151 @@
           };
         })();
 
+        // Separate filesystem for the desktop file manager
+        const buildFmFs = () => {
+          const txt = (ru, en = ru) => ({ ru, en });
+          return {
+            type: "dir",
+            name: "/",
+            children: {
+              desk: {
+                type: "dir",
+                name: "desk",
+                children: {
+                  "sticky.txt": {
+                    type: "file",
+                    name: "sticky.txt",
+                    content: txt(
+                      "Пора закончить: открыть дверь, пережить reboot, собрать себя.\nЕсли нужно вспомнить — смотри workspace/notes.md.",
+                      "Finish the routine: open the door, survive the reboot, gather yourself.\nIf you forget, read workspace/notes.md."
+                    ),
+                  },
+                  "calm.timer": {
+                    type: "file",
+                    name: "calm.timer",
+                    content: txt(
+                      "interval=25\npayload=встать, сделать глоток воды, не смотреть в терминал\nstatus=pending",
+                      "interval=25\npayload=stand up, sip water, stop staring at the terminal\nstatus=pending"
+                    ),
+                  },
+                },
+              },
+              workspace: {
+                type: "dir",
+                name: "workspace",
+                children: {
+                  "notes.md": {
+                    type: "file",
+                    name: "notes.md",
+                    content: txt(
+                      "# selfOS (gui layer)\n- Проводник и CMD разорваны: они смотрят в разные деревья.\n- connect self → объединяет их. Иначе пути не совпадут.\n- По умолчанию терминал смонтирован в C:\\home\\user.\n- Путь проводника: C:\\workspace.\n\n## План\n1) Дождаться сигнала (network.log?)\n2) connect self\n3) Проверить shared/ на новые файлы\n\n### Личное\nКогда проводник и терминал дышат в унисон, шум пропадает. Может, это и есть лечение.",
+                      "# selfOS (gui layer)\n- Explorer and CMD are split: they watch different trees.\n- connect self → merges them. Otherwise paths won't align.\n- Terminal mounts at C:\\home\\user by default.\n- Explorer starts at C:\\workspace.\n\n## Plan\n1) Wait for a signal (network.log?)\n2) connect self\n3) Check shared/ for new files\n\n### Personal\nWhen explorer and terminal breathe in sync, the noise stops. Maybe that's the cure."
+                    ),
+                  },
+                  "blueprint.ui": {
+                    type: "file",
+                    name: "blueprint.ui",
+                    content: txt(
+                      "window: explorer.exe\nlayout: tree | list | preview\nsafety: скрыть скрытое пока не попросили\nhint: двуклик = открыть\nfallback: если терминал не видит путь — значит деревья не слиты.",
+                      "window: explorer.exe\nlayout: tree | list | preview\nsafety: hide hidden until asked\nhint: double-click = open\nfallback: if terminal can't see the path, the trees are still apart."
+                    ),
+                  },
+                  "build.log": {
+                    type: "file",
+                    name: "build.log",
+                    glitch: true,
+                    content: txt(
+                      "[OK] gui-shell compiled\n[WARN] sync service disabled (connect self pending)\n[TODO] align cmd history after merge\n[NOTE] keep colors soft, eyes hurt",
+                      "[OK] gui-shell compiled\n[WARN] sync service disabled (connect self pending)\n[TODO] align cmd history after merge\n[NOTE] keep colors soft, eyes hurt"
+                    ),
+                  },
+                  drafts: {
+                    type: "dir",
+                    name: "drafts",
+                    children: {
+                      "mirror.spec": {
+                        type: "file",
+                        name: "mirror.spec",
+                        content: txt(
+                          "отражатель должен знать об обоих деревьях.\nесли один пропадает — не пугать пользователя, а предложить connect self.",
+                          "the mirror must know about both trees.\nif one disappears, don't scare the user; suggest connect self."
+                        ),
+                      },
+                      "door.fbx": {
+                        type: "file",
+                        name: "door.fbx",
+                        content: txt(
+                          "модель двери. но в gui она статична. не открывай здесь.\n(команда open работает только в терминале)",
+                          "door model. static in the GUI. do not open here.\n(open works only in terminal)"
+                        ),
+                      },
+                    },
+                  },
+                },
+              },
+              archive: {
+                type: "dir",
+                name: "archive",
+                children: {
+                  "session-00.log": {
+                    type: "file",
+                    name: "session-00.log",
+                    content: txt(
+                      "проводник жил отдельно. командная строка жила отдельно. мне казалось, так безопаснее.\nно шум только усиливался.",
+                      "explorer lived apart. command prompt lived apart. I thought it was safer.\nbut the noise only grew."
+                    ),
+                  },
+                  "session-01.log": {
+                    type: "file",
+                    name: "session-01.log",
+                    content: txt(
+                      "после merge шум стих. зато появились новые папки в cmd: shared/, inbox/. это нормально.",
+                      "after the merge the static hushed. new folders appeared in cmd: shared/, inbox/. that's fine."
+                    ),
+                  },
+                  "recovery.idx": {
+                    type: "file",
+                    name: "recovery.idx",
+                    content: txt(
+                      "если структура сломается:\n- перезагрузка → деревья снова разорваны\n- connect self заново, если нужно\n- не трогай recovery.bin (его нет)",
+                      "if the structure breaks:\n- reboot → trees split again\n- run connect self if needed\n- do not touch recovery.bin (it doesn't exist)"
+                    ),
+                  },
+                },
+              },
+              shared: {
+                type: "dir",
+                name: "shared",
+                children: {
+                  "handoff.txt": {
+                    type: "file",
+                    name: "handoff.txt",
+                    content: txt(
+                      "Проводник держит этот файл. CMD увидит его только после connect self.\nИспользуй его как тест.",
+                      "Explorer owns this file. CMD will see it only after connect self.\nUse it as a test."
+                    ),
+                  },
+                  inbox: {
+                    type: "dir",
+                    name: "inbox",
+                    children: {
+                      "msg-001.txt": {
+                        type: "file",
+                        name: "msg-001.txt",
+                        content: txt(
+                          "я оставил тебе напоминание в workspace/notes.md",
+                          "left you a reminder in workspace/notes.md"
+                        ),
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          };
+        };
+        let fmFs = buildFmFs();
+
         // Override memory_fragment_01.dat content per request (RU + EN)
         try {
           const frag01 = fs.children.home.children.user.children["memory_fragment_01.dat"];
@@ -766,6 +938,17 @@
         // Snapshot of initial filesystem to enable soft restarts
         const FS_BASE = (() => { try { return JSON.parse(JSON.stringify(fs)); } catch { return null; } })();
         const resetFS = () => { if (!FS_BASE) return; try { fs.children = JSON.parse(JSON.stringify(FS_BASE.children)); } catch {} };
+        const FM_BASE = (() => { try { return JSON.parse(JSON.stringify(fmFs)); } catch { return null; } })();
+        const resetFmFS = () => { if (!FM_BASE) return; try { fmFs = JSON.parse(JSON.stringify(FM_BASE)); } catch {} };
+        const resetFileManagerState = () => {
+          state.fileManager = {
+            path: ["workspace"],
+            selected: null,
+            showHidden: false,
+            history: [],
+            historyIndex: -1,
+          };
+        };
 
         const state = {
           path: ["home", "user"],
@@ -773,6 +956,17 @@
           started: false,
           history: [],
           historyIndex: -1,
+          // cmd mode (desktop phase)
+          cmdPath: "C:\\",
+          cmdHistory: [],
+          cmdHistoryIndex: -1,
+          fileManager: {
+            path: ["workspace"],
+            selected: null,
+            showHidden: false,
+            history: [],
+            historyIndex: -1,
+          },
           nano: null,
           flags: {
             scanned: false,
@@ -801,10 +995,18 @@
             angelTimer: null,
             // new exit simulation flag (freeze + overlay)
             exitSim: false,
+            // post-door reboot path
+            rebootPrompt: false,
+            rebooting: false,
+            guiBooted: false,
+            fsUnified: false,
           },
           whoamiCount: 0,
+          guiShellEl: null,
           pendingConfirm: null, // { type: 'openDoorIso', path: [...], onYes: fn, onNo: fn }
         };
+
+        let guiClockTimer = null;
 
         // (AI removed)
 
@@ -1132,6 +1334,45 @@
             o.start(now);
             o.stop(now + dur + 0.05);
           };
+          // Metallic creak / system-strain sound
+          const creak = (dur = 2.2) => {
+            if (!ensure()) return;
+            const now = ctx.currentTime;
+            const buf = buildNoiseBuffer();
+            if (buf) {
+              const src = ctx.createBufferSource();
+              src.buffer = buf;
+              src.loop = true;
+              const bp = ctx.createBiquadFilter();
+              bp.type = 'bandpass';
+              bp.frequency.setValueAtTime(260, now);
+              bp.frequency.exponentialRampToValueAtTime(70, now + dur);
+              bp.Q.value = 8;
+              const ws = ctx.createWaveShaper();
+              ws.curve = makeDistortionCurve(240);
+              ws.oversample = '4x';
+              const g = ctx.createGain();
+              g.gain.setValueAtTime(0.16, now);
+              g.gain.exponentialRampToValueAtTime(0.02, now + dur);
+              src.connect(bp).connect(ws).connect(g).connect(master);
+              src.start(now);
+              src.stop(now + dur + 0.05);
+            }
+            const low = ctx.createOscillator();
+            const lg = ctx.createGain();
+            const shaper = ctx.createWaveShaper();
+            shaper.curve = makeDistortionCurve(180);
+            shaper.oversample = '2x';
+            low.type = 'sawtooth';
+            low.frequency.setValueAtTime(120, now);
+            low.frequency.exponentialRampToValueAtTime(32, now + dur);
+            lg.gain.setValueAtTime(0.0001, now);
+            lg.gain.exponentialRampToValueAtTime(0.14, now + 0.08);
+            lg.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+            low.connect(shaper).connect(lg).connect(master);
+            low.start(now);
+            low.stop(now + dur + 0.05);
+          };
           const unlock = () => {
             unlocked = true;
             init();
@@ -1189,7 +1430,7 @@
               // ignore decode errors
             }
           };
-          return { trigger, startDrone, stopDrone, setVolume, mute, scream, breakGlass, apology, bootNoise, stopBootNoise, unlock, playMelodyFromBase64, sorryFinal };
+          return { trigger, startDrone, stopDrone, setVolume, mute, scream, breakGlass, apology, creak, bootNoise, stopBootNoise, unlock, playMelodyFromBase64, sorryFinal };
         })();
 
         const primeAudio = () => audio.unlock();
@@ -1243,7 +1484,10 @@
 
           // Big words overlay
           const wordsEl = fxWordsEl;
-          const setWords = () => { wordsEl.innerHTML = ''; };
+          const setWords = (on = false) => {
+            if (!wordsEl) return;
+            if (!on) wordsEl.innerHTML = '';
+          };
           const burstWords = () => {};
           const wordsFlood = () => {};
 
@@ -1349,6 +1593,9 @@
             return { tearDown };
           };
           const stopAll = () => {
+            if (typeof stopConnectSelfFx === 'function') {
+              try { stopConnectSelfFx(); } catch {}
+            }
             setTrip('off');
             strobe(false); chroma(false); bloom(false); godVision(false);
             stopCracks(); stopTear(); setWords(false);
@@ -1536,15 +1783,17 @@
           return "/" + pathArr.join("/");
         };
 
-        const resolveNode = (pathArr) => {
-          if (!pathArr.length) return fs;
-          let node = fs;
+        const resolveNodeAt = (root, pathArr) => {
+          if (!pathArr.length) return root;
+          let node = root;
           for (const segment of pathArr) {
             if (!node || node.type !== "dir") return null;
             node = node.children?.[segment];
           }
           return node || null;
         };
+        const resolveNode = (pathArr) => resolveNodeAt(fs, pathArr);
+        const resolveNodeFm = (pathArr) => resolveNodeAt(fmFs, pathArr);
 
         // Ephemeral lock for post-exit behavior (per session)
         const isExitLocked = () => !!state.flags.exitLocked;
@@ -1566,9 +1815,9 @@
           }
         };
 
-        const resolveParent = (pathArr) => {
+        const resolveParentAt = (root, pathArr) => {
           if (!pathArr || !pathArr.length) return [null, ''];
-          let node = fs;
+          let node = root;
           for (let i = 0; i < pathArr.length - 1; i++) {
             if (!node || node.type !== 'dir') return [null, ''];
             node = node.children?.[pathArr[i]];
@@ -1576,15 +1825,107 @@
           const name = pathArr[pathArr.length - 1];
           return [node, name];
         };
+        const resolveParent = (pathArr) => resolveParentAt(fs, pathArr);
+        const resolveParentFm = (pathArr) => resolveParentAt(fmFs, pathArr);
 
-        const ensureDir = (pathArr) => {
-          const node = resolveNode(pathArr);
+        const ensureDirAt = (root, pathArr) => {
+          const node = resolveNodeAt(root, pathArr);
           return node && node.type === "dir" ? node : null;
         };
 
-        const ensureFile = (pathArr) => {
-          const node = resolveNode(pathArr);
+        const ensureFileAt = (root, pathArr) => {
+          const node = resolveNodeAt(root, pathArr);
           return node && node.type === "file" ? node : null;
+        };
+
+        const ensureDir = (pathArr) => ensureDirAt(fs, pathArr);
+
+        const ensureFile = (pathArr) => ensureFileAt(fs, pathArr);
+
+        const ensureDirFm = (pathArr) => ensureDirAt(fmFs, pathArr);
+
+        const ensureFileFm = (pathArr) => ensureFileAt(fmFs, pathArr);
+
+        const ensureFileManagerState = () => {
+          if (!state.fileManager) resetFileManagerState();
+          const fm = state.fileManager || {};
+          if (!Array.isArray(fm.path)) fm.path = ["workspace"];
+          if (!Array.isArray(fm.history)) fm.history = [];
+          if (typeof fm.historyIndex !== "number") fm.historyIndex = -1;
+          state.fileManager = fm;
+          return fm;
+        };
+
+        const mergeTrees = (target, source) => {
+          if (!target || !source || target.type !== 'dir' || source.type !== 'dir') return;
+          target.children = target.children || {};
+          const entries = Object.entries(source.children || {});
+          entries.forEach(([name, node]) => {
+            if (!target.children[name]) {
+              target.children[name] = JSON.parse(JSON.stringify(node));
+            } else if (target.children[name].type === 'dir' && node.type === 'dir') {
+              mergeTrees(target.children[name], node);
+            }
+          });
+        };
+
+        let stopConnectSelfFx = null;
+        const triggerConnectSelfFx = () => {
+          const duration = 10000;
+          if (typeof stopConnectSelfFx === 'function') {
+            try { stopConnectSelfFx(); } catch {}
+          }
+          document.body.classList.add('glitch');
+          effects.doubleVision(duration + 400);
+          effects.setTrip('hard');
+          effects.chroma(true);
+          effects.strobe(true);
+          effects.startCracks();
+          effects.startTear();
+          effects.shake(Math.min(1400, duration));
+          if (audio.creak) {
+            audio.creak(2.4);
+          } else {
+            audio.breakGlass();
+          }
+          const creakTail = setTimeout(() => {
+            try {
+              if (audio.creak) audio.creak(1.6);
+              else audio.trigger('glitch');
+            } catch {}
+          }, 3600);
+          const glassTail = setTimeout(() => { try { audio.breakGlass(); } catch {} }, Math.max(1200, duration - 2400));
+          const tripExtend = setTimeout(() => effects.setTrip('hard'), 4800);
+          const strobeAgain = setTimeout(() => effects.strobe(true), 5200);
+          const cracksAgain = setTimeout(() => effects.startCracks(), 5200);
+          const tearAgain = setTimeout(() => effects.startTear(), 5400);
+          const glitchPulse = setInterval(() => {
+            document.body.classList.add('glitch');
+            effects.doubleVision(random(320, 820));
+            try { audio.trigger('glitch'); } catch {}
+            setTimeout(() => document.body.classList.remove('glitch'), 220);
+          }, 1400);
+          stopConnectSelfFx = () => {
+            document.body.classList.remove('glitch');
+            clearInterval(glitchPulse);
+            clearTimeout(tripExtend);
+            clearTimeout(strobeAgain);
+            clearTimeout(cracksAgain);
+            clearTimeout(tearAgain);
+            clearTimeout(creakTail);
+            clearTimeout(glassTail);
+            effects.setTrip('off');
+            effects.strobe(false);
+            effects.chroma(false);
+            effects.stopCracks();
+            effects.stopTear();
+            stopConnectSelfFx = null;
+          };
+          setTimeout(() => {
+            if (typeof stopConnectSelfFx === 'function') {
+              try { stopConnectSelfFx(); } catch {}
+            }
+          }, duration);
         };
 
         const appendLine = (text = "", cls = "") => {
@@ -1613,33 +1954,6 @@
         };
 
         const pick = (arr) => arr[Math.max(0, Math.min(arr.length - 1, random(0, (arr?.length || 1) - 1)))];
-
-        
-
-        
-
-        
-
-        
-
-        
-
-        
-
-        
-
-        const recallLine = (items) => {
-          if (!items || !items.length) return '';
-          const ru = state.lang==='ru';
-          const it = items[0];
-          if (it.type === 'fact') return ru ? `Помню факт: ${it.text}.` : `I recall a fact: ${it.text}.`;
-          if (it.type === 'pref') return ru ? `Помню твоё предпочтение: ${it.text}.` : `I recall your preference: ${it.text}.`;
-          return ru ? `Мы уже касались этого раньше.` : `We touched this before.`;
-        };
-
-        
-
-        const english = (ru, en) => (state.lang === "ru" ? ru : en);
 
         const randomGlitch = (text) => {
           const fragments = text.split("");
@@ -1738,7 +2052,12 @@
         };
 
         const setPrompt = () => {
-          promptEl.textContent = getTranslations().prompt(pathToString(state.path));
+          if (state.flags.guiBooted) {
+            state.cmdPath = cmdPathFromSegments(state.path);
+            promptEl.textContent = `${state.cmdPath}>`;
+          } else {
+            promptEl.textContent = getTranslations().prompt(pathToString(state.path));
+          }
         };
 
         
@@ -2003,7 +2322,6 @@
           d.children[name] = { type: 'file', name, content: { ru, en }, ...extra };
         };
         const buildIdeaManifest = () => {
-          const top = '';
           const stepsRU = [];
           const stepsEN = [];
           if (!state.flags.scanned) { stepsRU.push('scan'); stepsEN.push('scan'); }
@@ -2012,13 +2330,13 @@
           if (!state.flags.divineKey) { stepsRU.push('cat god/divine.key'); stepsEN.push('cat god/divine.key'); }
           const ru = [
             'IDEA//MANIFEST',
-            `фокусы: ${top || 'key'}`,
+            'фокусы: key',
             'протокол:',
             ...stepsRU.map(s => ` - ${s}`),
           ].join('\n');
           const en = [
             'IDEA//MANIFEST',
-            `focus: ${top || 'key'}`,
+            'focus: key',
             'protocol:',
             ...stepsEN.map(s => ` - ${s}`),
           ].join('\n');
@@ -2041,6 +2359,9 @@
           state.history = []; state.historyIndex = -1;
           try { outputEl.innerHTML = ''; } catch {}
           resetFS();
+          resetFmFS();
+          state.flags.fsUnified = false;
+          resetFileManagerState();
           ensureDoNotReedFile();
           try { inputEl.disabled = false; inputEl.value = ''; inputEl.focus(); } catch {}
           setPrompt();
@@ -2200,6 +2521,962 @@
           try { audio.startDrone('max'); } catch {}
           // Visual: physical-looking door opens and zooms to fill screen
           effects.doorOpenZoom();
+          // Surface a reboot control after the door consumes the view
+          setTimeout(() => { try { showRebootPrompt(); } catch {} }, 10400);
+        };
+
+        const showRebootPrompt = () => {
+          if (state.flags.rebootPrompt || state.flags.guiBooted) return;
+          state.flags.rebootPrompt = true;
+          const wrap = document.createElement('div');
+          wrap.className = 'reboot-prompt';
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'reboot-chip reboot-square';
+          const label = state.lang === 'ru' ? 'перезагрузка' : 'reboot';
+          btn.innerHTML = `<span class="icon">⟳</span><span class="label">${label}</span>`;
+          wrap.appendChild(btn);
+          document.body.appendChild(wrap);
+          setTimeout(() => wrap.classList.add('visible'), 30);
+          btn.addEventListener('click', () => beginGuiReboot(wrap));
+        };
+
+        const beginGuiReboot = (wrap) => {
+          if (state.flags.rebooting || state.flags.guiBooted) return;
+          state.flags.rebooting = true;
+          const btn = wrap && wrap.querySelector('.reboot-chip');
+          try { wrap.classList.add('fade'); setTimeout(() => wrap.remove(), 420); } catch {}
+          try { effects.stopAll(); audio.stopDrone(); audio.stopBootNoise && audio.stopBootNoise(); } catch {}
+          const screen = document.createElement('div');
+          screen.className = 'reboot-screen selfboot';
+          screen.innerHTML = `
+            <div class="self-boot">
+              <div class="self-title">
+                <span class="self-name">selfOS</span>
+                <span class="self-desc">${state.lang === 'ru' ? 'перезапуск графической среды' : 'rebooting graphical shell'}</span>
+              </div>
+              <div class="self-log"></div>
+            </div>
+          `;
+          document.body.appendChild(screen);
+          setTimeout(() => screen.classList.add('visible'), 20);
+
+          const logEl = screen.querySelector('.self-log');
+          const ok = '[  OK  ]';
+          const bootLines = state.lang === 'ru' ? [
+            `${ok} Остановка tty1`,
+            `${ok} Размонтирование старых слоёв`,
+            `${ok} Завершение user.slice`,
+            `${ok} Остановка демона шума`,
+            `${ok} Запуск диспетчера входа`,
+            `${ok} Запуск графической оболочки selfOS`,
+            `${ok} Монтаж /home/fragment`,
+            `${ok} Старт selfOS-desktop.service`,
+            `${ok} Синхронизация часов`,
+            `${ok} Подготовка рабочего стола (soft mode)`,
+          ] : [
+            `${ok} Stopping tty1`,
+            `${ok} Unmounting stale layers`,
+            `${ok} Stopping noise daemon`,
+            `${ok} Stopping user.slice`,
+            `${ok} Starting login manager`,
+            `${ok} Starting selfOS graphical shell`,
+            `${ok} Mounting /home/fragment`,
+            `${ok} Starting selfOS-desktop.service`,
+            `${ok} Syncing clock`,
+            `${ok} Preparing desktop (soft mode)`,
+          ];
+          let idx = 0;
+          const pushLine = () => {
+            if (!logEl) return;
+            const div = document.createElement('div');
+            div.textContent = bootLines[idx];
+            logEl.appendChild(div);
+            logEl.scrollTop = logEl.scrollHeight;
+            idx += 1;
+            if (idx < bootLines.length) {
+              setTimeout(pushLine, random(90, 240));
+            } else {
+              setTimeout(() => bootIntoGui(screen), 420);
+            }
+          };
+          setTimeout(pushLine, 220);
+        };
+
+        const bootIntoGui = (screen) => {
+          try { document.querySelectorAll('.door-overlay').forEach((el) => el.remove()); } catch {}
+          try { document.querySelectorAll('.reboot-chip').forEach((el) => el.remove()); } catch {}
+          try { document.querySelectorAll('.start-screen').forEach((el) => el.remove()); } catch {}
+          try { inputEl.disabled = true; inputEl.blur(); } catch {}
+          try { exitNano(); } catch {}
+          try { effects.stopAll(); audio.stopDrone(); audio.stopBootNoise && audio.stopBootNoise(); } catch {}
+          resetFS();
+          resetFmFS();
+          state.flags.fsUnified = false;
+          state.flags.guiBooted = true;
+          resetCmdSession();
+          resetFileManagerState();
+          document.body.classList.add('gui-mode');
+          buildGuiShell();
+          try { inputEl.disabled = false; inputEl.focus(); } catch {}
+          setTimeout(() => {
+            screen.classList.add('fade');
+            setTimeout(() => { try { screen.remove(); } catch {} }, 620);
+          }, 820);
+          setPrompt();
+        };
+
+        const startGuiClock = (el) => {
+          if (!el) return;
+          const update = () => {
+            const d = new Date();
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            el.textContent = `${hh}:${mm}`;
+          };
+          update();
+          if (guiClockTimer) clearInterval(guiClockTimer);
+          guiClockTimer = setInterval(update, 15000);
+        };
+
+        const buildGuiShell = () => {
+          if (state.guiShellEl && state.guiShellEl.parentNode) {
+            try { state.guiShellEl.remove(); } catch {}
+          }
+          const t = state.lang === 'ru'
+            ? {
+                start: 'Пуск',
+                deskTitle: 'Рабочий стол selfOS',
+                sysProps: 'Состояние системы',
+                filesWin: 'Проводник selfOS',
+                status: 'Состояние',
+                statusOk: 'Стабильно',
+                memory: 'Память',
+                memoryOk: 'Собрана',
+                door: 'Дверь',
+                doorOk: 'Заперта и переписана',
+                net: 'Сеть',
+                netOk: 'Связь приглушена',
+                logWin: 'Журнал после перезагрузки',
+                noteWin: 'Панель напоминаний',
+                taskDesktop: 'Рабочий стол',
+                taskLog: 'Журнал',
+                taskFiles: 'Проводник',
+                taskTerm: 'Командная строка',
+                icons: {
+                  computer: 'selfOS',
+                  trash: 'Корзина',
+                  logs: 'Логи',
+                  files: 'Файлы',
+                  net: 'Сеть',
+                },
+                logs: [
+                  'selfOS: переход в GUI-режим завершён',
+                  'door: процесс архивирован, доступ закрыт',
+                  'mirror: синхронизация завершена',
+                  'god: канал оставлен за порогом',
+                  'tty: готов к запуску в окне',
+                ],
+                notes: [
+                  '• Командную строку можно открыть через Пуск → Командная строка.',
+                  '• selfOS работает в мягком цветовом режиме.',
+                  '• Вход: fragment (гость).',
+                  '• Звук: отключён, шум подавлен.',
+                ],
+                fm: {
+                  back: 'Назад',
+                  forward: 'Вперёд',
+                  up: 'Вверх',
+                  home: 'Домой',
+                  refresh: 'Обновить',
+                  hiddenOn: 'Скрыть скрытые',
+                  hiddenOff: 'Показать скрытые',
+                  openTerminal: 'В терминале',
+                  open: 'Открыть',
+                  name: 'Имя',
+                  type: 'Тип',
+                  size: 'Размер',
+                  tags: 'Метки',
+                  preview: 'Просмотр',
+                  path: 'Путь',
+                },
+              }
+            : {
+                start: 'Start',
+                deskTitle: 'selfOS desktop',
+                sysProps: 'System status',
+                filesWin: 'selfOS Explorer',
+                status: 'Status',
+                statusOk: 'Stable',
+                memory: 'Memory',
+                memoryOk: 'Restored',
+                door: 'Door',
+                doorOk: 'Locked and rewritten',
+                net: 'Network',
+                netOk: 'Channel muted',
+                logWin: 'Post-reboot log',
+                noteWin: 'Reminder panel',
+                taskDesktop: 'Desktop',
+                taskLog: 'Log',
+                taskFiles: 'Files',
+                taskTerm: 'Command Prompt',
+                icons: {
+                  computer: 'selfOS',
+                  trash: 'Bin',
+                  logs: 'Logs',
+                  files: 'Files',
+                  net: 'Network',
+                },
+                logs: [
+                  'selfOS: switched to GUI mode',
+                  'door: process archived, access closed',
+                  'mirror: sync complete',
+                  'god: channel left outside',
+                  'tty: ready to launch in window',
+                ],
+                notes: [
+                  '• Open Command Prompt via Start → Command Prompt.',
+                  '• selfOS running in soft color mode.',
+                  '• Login: fragment (guest).',
+                  '• Audio muted; noise damped.',
+                ],
+                fm: {
+                  back: 'Back',
+                  forward: 'Forward',
+                  up: 'Up',
+                  home: 'Home',
+                  refresh: 'Refresh',
+                  hiddenOn: 'Hide hidden',
+                  hiddenOff: 'Show hidden',
+                  openTerminal: 'To terminal',
+                  open: 'Open',
+                  name: 'Name',
+                  type: 'Type',
+                  size: 'Size',
+                  tags: 'Tags',
+                  preview: 'Preview',
+                  path: 'Path',
+                },
+              };
+          const statusRows = [
+            { k: t.status, v: t.statusOk },
+            { k: t.memory, v: t.memoryOk },
+            { k: t.door, v: t.doorOk },
+            { k: t.net, v: t.netOk },
+          ];
+          const logs = (t.logs || []).map((line) => `<li>${escapeHtml(line)}</li>`).join('');
+          const notes = (t.notes || []).map((line) => `<div>${escapeHtml(line)}</div>`).join('');
+          const shell = document.createElement('div');
+          shell.className = 'gui-shell win98';
+          shell.innerHTML = `
+              <div class="desktop">
+                <div class="desktop-title">${escapeHtml(t.deskTitle)}</div>
+              <div class="desktop-icons">
+                <div class="desktop-icon" data-app="sys">
+                  <div class="icon-img computer"></div>
+                  <div class="icon-label">${escapeHtml(t.icons.computer)}</div>
+                </div>
+                <div class="desktop-icon" data-app="note">
+                  <div class="icon-img note"></div>
+                  <div class="icon-label">${escapeHtml(t.noteWin)}</div>
+                </div>
+                <div class="desktop-icon" data-app="files">
+                  <div class="icon-img files"></div>
+                  <div class="icon-label">${escapeHtml(t.taskFiles)}</div>
+                </div>
+                <div class="desktop-icon" data-app="log">
+                  <div class="icon-img log"></div>
+                  <div class="icon-label">${escapeHtml(t.icons.logs)}</div>
+                </div>
+                <div class="desktop-icon" data-app="terminal">
+                  <div class="icon-img term"></div>
+                  <div class="icon-label">${escapeHtml(t.taskTerm)}</div>
+                </div>
+                <div class="desktop-icon" data-app="net">
+                  <div class="icon-img net"></div>
+                  <div class="icon-label">${escapeHtml(t.icons.net)}</div>
+                </div>
+              </div>
+              <div class="win98-window sys" data-app="sys">
+                <div class="titlebar">
+                  <span class="title">${escapeHtml(t.sysProps)}</span>
+                  <div class="title-buttons"><span data-btn="min">_</span><span data-btn="max">□</span><span data-btn="close">×</span></div>
+                </div>
+                <div class="window-body">
+                  <div class="status-list">
+                    ${statusRows.map((row) => `<div class="status-row"><span>${escapeHtml(row.k)}</span><span class="value">${escapeHtml(row.v)}</span></div>`).join('')}
+                  </div>
+                </div>
+              </div>
+              <div class="win98-window logwin" data-app="log">
+                <div class="titlebar">
+                  <span class="title">${escapeHtml(t.logWin)}</span>
+                  <div class="title-buttons"><span data-btn="min">_</span><span data-btn="max">□</span><span data-btn="close">×</span></div>
+                </div>
+                <div class="window-body log-body">
+                  <ul class="log-list">${logs}</ul>
+                </div>
+              </div>
+              <div class="win98-window note" data-app="note">
+                <div class="titlebar">
+                  <span class="title">${escapeHtml(t.noteWin)}</span>
+                  <div class="title-buttons"><span data-btn="min">_</span><span data-btn="max">□</span><span data-btn="close">×</span></div>
+                </div>
+                <div class="window-body note-body">
+                  ${notes}
+                </div>
+              </div>
+              <div class="win98-window files" data-app="files">
+                <div class="titlebar">
+                  <span class="title">${escapeHtml(t.filesWin)}</span>
+                  <div class="title-buttons"><span data-btn="min">_</span><span data-btn="max">□</span><span data-btn="close">×</span></div>
+                </div>
+                <div class="window-body fm-body">
+                  <div class="fm-shell">
+                    <div class="fm-toolbar">
+                      <button class="fm-btn" data-fm="back" title="${escapeHtml(t.fm.back)}">◀</button>
+                      <button class="fm-btn" data-fm="forward" title="${escapeHtml(t.fm.forward)}">▶</button>
+                      <button class="fm-btn" data-fm="up" title="${escapeHtml(t.fm.up)}">⬆</button>
+                      <button class="fm-btn" data-fm="home" title="${escapeHtml(t.fm.home)}">⌂</button>
+                      <button class="fm-btn ghost" data-fm="refresh" title="${escapeHtml(t.fm.refresh)}">⟳</button>
+                      <div class="fm-spacer"></div>
+                      <button class="fm-btn ghost" data-fm="hidden" title="${escapeHtml(t.fm.hiddenOff)}">${escapeHtml(t.fm.hiddenOff)}</button>
+                      <button class="fm-btn ghost" data-fm="terminal">${escapeHtml(t.fm.openTerminal)}</button>
+                      <button class="fm-btn primary" data-fm="open">${escapeHtml(t.fm.open)}</button>
+                    </div>
+                    <div class="fm-pathbar">
+                      <span class="fm-path-label">${escapeHtml(t.fm.path)}</span>
+                      <div class="fm-path"></div>
+                    </div>
+                    <div class="fm-content">
+                      <div class="fm-tree"></div>
+                      <div class="fm-list">
+                        <div class="fm-head">
+                          <span class="col-name">${escapeHtml(t.fm.name)}</span>
+                          <span class="col-type">${escapeHtml(t.fm.type)}</span>
+                          <span class="col-size">${escapeHtml(t.fm.size)}</span>
+                          <span class="col-tags">${escapeHtml(t.fm.tags)}</span>
+                        </div>
+                        <div class="fm-rows"></div>
+                        <div class="fm-empty"></div>
+                      </div>
+                      <div class="fm-preview">
+                        <div class="fm-preview-title">${escapeHtml(t.fm.preview)}</div>
+                        <div class="fm-preview-meta"></div>
+                        <pre class="fm-preview-body"></pre>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="win98-window term" data-app="terminal">
+                <div class="titlebar">
+                  <span class="title">${escapeHtml(t.taskTerm)}</span>
+                  <div class="title-buttons"><span data-btn="min">_</span><span data-btn="max">□</span><span data-btn="close">×</span></div>
+                </div>
+                <div class="window-body term-body">
+                  <div class="terminal-mount"></div>
+                </div>
+              </div>
+            </div>
+            <div class="taskbar">
+              <button class="start-btn">${escapeHtml(t.start)}</button>
+              <div class="start-menu">
+                <div class="start-item" data-app="terminal">${escapeHtml(t.taskTerm)}</div>
+                <div class="start-item" data-app="files">${escapeHtml(t.taskFiles)}</div>
+                <div class="start-item" data-app="log">${escapeHtml(t.taskLog)}</div>
+                <div class="start-item" data-app="note">${escapeHtml(t.noteWin)}</div>
+                <div class="start-item" data-app="sys">${escapeHtml(t.sysProps)}</div>
+              </div>
+              <div class="task-buttons">
+                <div class="task-btn active" data-app="desktop">${escapeHtml(t.taskDesktop)}</div>
+                <div class="task-btn" data-app="log">${escapeHtml(t.taskLog)}</div>
+                <div class="task-btn" data-app="files">${escapeHtml(t.taskFiles)}</div>
+                <div class="task-btn" data-app="terminal">${escapeHtml(t.taskTerm)}</div>
+              </div>
+              <div class="tray">
+                <span class="tray-led on"></span>
+                <span class="tray-led on"></span>
+                <span class="task-clock gui-clock"></span>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(shell);
+          state.guiShellEl = shell;
+          startGuiClock(shell.querySelector('.gui-clock'));
+          mountTerminal(shell);
+          initWindowControls(shell);
+          initDesktopIcons(shell);
+          initFileManager(shell);
+        };
+
+        const mountTerminal = (shell) => {
+          const slot = shell.querySelector('.terminal-mount');
+          const term = document.querySelector('.terminal');
+          if (slot && term) {
+            slot.appendChild(term);
+            term.classList.add('cmd-shell');
+            term.style.position = 'relative';
+            term.style.width = '100%';
+            term.style.height = '100%';
+            term.style.transform = 'none';
+            term.style.margin = '0';
+          }
+        };
+
+        const initWindowControls = (shell) => {
+          let zTop = 50;
+          const wins = Array.from(shell.querySelectorAll('.win98-window'));
+          const desktop = shell.querySelector('.desktop');
+          const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
+          const minSizes = {
+            default: { w: 260, h: 160 },
+            files: { w: 560, h: 320 },
+            term: { w: 420, h: 320 },
+          };
+          const getMinSize = (win) => {
+            const app = win.getAttribute('data-app');
+            const attrW = parseInt(win.getAttribute('data-min-width') || '', 10);
+            const attrH = parseInt(win.getAttribute('data-min-height') || '', 10);
+            const base = minSizes[app] || minSizes.default;
+            return { w: attrW || base.w, h: attrH || base.h };
+          };
+          const bring = (el) => {
+            zTop += 1;
+            el.style.zIndex = zTop;
+          };
+          const toggleMin = (el, hide) => {
+            el.classList.toggle('minimized', hide);
+          };
+          const toggleMax = (el) => {
+            el.classList.toggle('maximized');
+          };
+          const attachResizers = (win) => {
+            const dirs = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
+            dirs.forEach((dir) => {
+              const handle = document.createElement('div');
+              handle.className = `resize-handle ${dir}`;
+              handle.dataset.dir = dir;
+              win.appendChild(handle);
+              handle.addEventListener('mousedown', (ev) => {
+                ev.preventDefault();
+                bring(win);
+                win.classList.remove('maximized');
+                win.style.right = 'auto';
+                win.style.bottom = 'auto';
+                const startX = ev.clientX;
+                const startY = ev.clientY;
+                const parentRect = desktop
+                  ? desktop.getBoundingClientRect()
+                  : (win.parentElement && win.parentElement.getBoundingClientRect());
+                const rect = win.getBoundingClientRect();
+                const startLeft = rect.left - (parentRect ? parentRect.left : 0);
+                const startTop = rect.top - (parentRect ? parentRect.top : 0);
+                const startWidth = rect.width;
+                const startHeight = rect.height;
+                const min = getMinSize(win);
+                const onMove = (e) => {
+                  let newLeft = startLeft;
+                  let newTop = startTop;
+                  let newWidth = startWidth;
+                  let newHeight = startHeight;
+                  const dx = e.clientX - startX;
+                  const dy = e.clientY - startY;
+                  if (dir.includes('e')) newWidth = Math.max(min.w, startWidth + dx);
+                  if (dir.includes('s')) newHeight = Math.max(min.h, startHeight + dy);
+                  if (dir.includes('w')) {
+                    const width = Math.max(min.w, startWidth - dx);
+                    newLeft = startLeft + (startWidth - width);
+                    newWidth = width;
+                  }
+                  if (dir.includes('n')) {
+                    const height = Math.max(min.h, startHeight - dy);
+                    newTop = startTop + (startHeight - height);
+                    newHeight = height;
+                  }
+                  if (parentRect) {
+                    const maxLeft = parentRect.width - min.w - 4;
+                    const maxTop = parentRect.height - min.h - 4;
+                    newLeft = clamp(newLeft, 4, Math.max(4, maxLeft));
+                    newTop = clamp(newTop, 4, Math.max(4, maxTop));
+                    newWidth = clamp(newWidth, min.w, parentRect.width - newLeft - 4);
+                    newHeight = clamp(newHeight, min.h, parentRect.height - newTop - 4);
+                  }
+                  win.style.left = `${newLeft}px`;
+                  win.style.top = `${newTop}px`;
+                  win.style.width = `${newWidth}px`;
+                  win.style.height = `${newHeight}px`;
+                };
+                const onUp = () => {
+                  document.body.classList.remove('resizing');
+                  document.removeEventListener('mousemove', onMove);
+                  document.removeEventListener('mouseup', onUp);
+                };
+                document.body.classList.add('resizing');
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+              });
+            });
+          };
+          wins.forEach((win) => {
+            bring(win);
+            attachResizers(win);
+            const bar = win.querySelector('.titlebar');
+            const btns = win.querySelectorAll('[data-btn]');
+            btns.forEach((b) => {
+              b.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const type = b.getAttribute('data-btn');
+                if (type === 'min') toggleMin(win, true);
+                if (type === 'max') toggleMax(win);
+                if (type === 'close') toggleMin(win, true);
+              });
+            });
+            if (bar) {
+              let dragging = false;
+              let offsetX = 0, offsetY = 0;
+              bar.addEventListener('mousedown', (ev) => {
+                dragging = true;
+                bring(win);
+                const rect = win.getBoundingClientRect();
+                offsetX = ev.clientX - rect.left;
+                offsetY = ev.clientY - rect.top;
+                document.body.classList.add('dragging');
+              });
+              window.addEventListener('mousemove', (ev) => {
+                if (!dragging) return;
+                win.classList.remove('maximized');
+                const x = ev.clientX - offsetX;
+                const y = ev.clientY - offsetY;
+                win.style.left = Math.max(4, x) + 'px';
+                win.style.top = Math.max(4, y) + 'px';
+              });
+              window.addEventListener('mouseup', () => {
+                dragging = false;
+                document.body.classList.remove('dragging');
+              });
+              bar.addEventListener('dblclick', () => { toggleMax(win); bring(win); });
+            }
+          });
+          const startBtn = shell.querySelector('.start-btn');
+          const menu = shell.querySelector('.start-menu');
+          const toggleMenu = () => {
+            if (menu) menu.classList.toggle('open');
+            if (menu && menu.classList.contains('open')) bring(menu);
+          };
+          if (startBtn && menu) {
+            startBtn.addEventListener('click', (ev) => { ev.stopPropagation(); toggleMenu(); });
+            document.addEventListener('click', () => { menu.classList.remove('open'); });
+            menu.addEventListener('click', (ev) => {
+              const item = ev.target.closest('.start-item');
+              if (!item) return;
+              const app = item.getAttribute('data-app');
+              const win = shell.querySelector(`.win98-window[data-app="${app}"]`);
+              if (win) { win.classList.remove('minimized'); bring(win); }
+              menu.classList.remove('open');
+              ev.stopPropagation();
+            });
+          }
+          const tasks = shell.querySelectorAll('.task-btn[data-app]');
+          const setActiveTask = (app) => {
+            tasks.forEach((t) => t.classList.toggle('active', t.getAttribute('data-app') === app));
+          };
+          tasks.forEach((btn) => {
+            btn.addEventListener('click', () => {
+              const app = btn.getAttribute('data-app');
+              if (app === 'desktop') { setActiveTask('desktop'); return; }
+              const win = shell.querySelector(`.win98-window[data-app="${app}"]`);
+              if (!win) return;
+              const minimized = win.classList.contains('minimized');
+              if (minimized) { win.classList.remove('minimized'); bring(win); }
+              else { win.classList.add('minimized'); }
+              setActiveTask(app);
+            });
+          });
+          shell.querySelectorAll('.win98-window').forEach((win) => {
+            win.addEventListener('mousedown', () => { bring(win); setActiveTask(win.getAttribute('data-app')); });
+          });
+        };
+
+        const initDesktopIcons = (shell) => {
+          const icons = Array.from(shell.querySelectorAll('.desktop-icon'));
+          const spacingY = 96;
+          const spacingX = 88;
+          let col = 0, row = 0;
+          icons.forEach((icon, idx) => {
+            const x = col * spacingX;
+            const y = row * spacingY + 44;
+            icon.style.left = `${x}px`;
+            icon.style.top = `${y}px`;
+            col += 1;
+            if (col >= 2) { col = 0; row += 1; }
+          });
+          const bringWindow = (app) => {
+            const win = shell.querySelector(`.win98-window[data-app="${app}"]`);
+            if (win) {
+              win.classList.remove('minimized');
+              win.style.display = 'block';
+              win.dispatchEvent(new Event('mousedown'));
+            }
+          };
+          icons.forEach((icon) => {
+            icon.addEventListener('dblclick', () => {
+              const app = icon.getAttribute('data-app');
+              bringWindow(app);
+            });
+            let dragging = false;
+            let ox = 0, oy = 0;
+            icon.addEventListener('mousedown', (ev) => {
+              dragging = true;
+              ox = ev.clientX - icon.offsetLeft;
+              oy = ev.clientY - icon.offsetTop;
+              icon.classList.add('dragging');
+              ev.preventDefault();
+            });
+            window.addEventListener('mousemove', (ev) => {
+              if (!dragging) return;
+              icon.style.left = `${Math.max(0, ev.clientX - ox)}px`;
+              icon.style.top = `${Math.max(36, ev.clientY - oy)}px`;
+            });
+            window.addEventListener('mouseup', () => { dragging = false; icon.classList.remove('dragging'); });
+          });
+        };
+
+        const initFileManager = (shell) => {
+          const win = shell.querySelector('.win98-window.files');
+          if (!win) return;
+          const fm = ensureFileManagerState();
+          const fmLabels = getTranslations().fm || {};
+          if (!fm.history.length) { fm.history = [fm.path.slice()]; fm.historyIndex = 0; }
+          const tLocal = state.lang === 'ru'
+            ? {
+                root: 'Корень (C:)',
+                empty: 'Папка пуста.',
+                noSelection: 'Выбери файл или папку, чтобы увидеть детали.',
+                blocked: 'Доступ ограничен.',
+                blockedEye: 'Нужен допуск /eye.',
+                blockedTruth: 'Нужен пароль истины.',
+                dirSummary: (n) => `${n} объект${n === 1 ? '' : n < 5 ? 'а' : 'ов'}`,
+                fileSummary: (n) => `${n} символов`,
+                peek: (items) => items.length ? `Внутри: ${items.join(', ')}` : 'Папка пуста.',
+                opened: 'Файл открыт через проводник.',
+                pathSent: 'Путь передан в терминал.',
+                missing: 'Элемент не найден.',
+                hint: 'Двойной клик открывает элемент.',
+              }
+            : {
+                root: 'Root (C:)',
+                empty: 'Folder is empty.',
+                noSelection: 'Pick a file or folder to see details.',
+                blocked: 'Access restricted.',
+                blockedEye: 'Eye access required.',
+                blockedTruth: 'Truth password required.',
+                dirSummary: (n) => `${n} item${n === 1 ? '' : 's'}`,
+                fileSummary: (n) => `${n} chars`,
+                peek: (items) => items.length ? `Inside: ${items.join(', ')}` : 'Folder is empty.',
+                opened: 'File opened via explorer.',
+                pathSent: 'Path sent to terminal.',
+                missing: 'Item missing.',
+                hint: 'Double-click to open.',
+              };
+          const rowsEl = win.querySelector('.fm-rows');
+          const emptyEl = win.querySelector('.fm-empty');
+          const treeEl = win.querySelector('.fm-tree');
+          const previewTitle = win.querySelector('.fm-preview-title');
+          const previewMeta = win.querySelector('.fm-preview-meta');
+          const previewBody = win.querySelector('.fm-preview-body');
+          const pathEl = win.querySelector('.fm-path');
+          const hiddenBtn = win.querySelector('[data-fm="hidden"]');
+          const termBtn = win.querySelector('[data-fm="terminal"]');
+          const openBtn = win.querySelector('[data-fm="open"]');
+          const refreshBtn = win.querySelector('[data-fm="refresh"]');
+          const backBtn = win.querySelector('[data-fm="back"]');
+          const forwardBtn = win.querySelector('[data-fm="forward"]');
+          const upBtn = win.querySelector('[data-fm="up"]');
+          const homeBtn = win.querySelector('[data-fm="home"]');
+          const sortEntries = (list) => list.slice().sort((a, b) => {
+            const aDir = a[1] && a[1].type === 'dir';
+            const bDir = b[1] && b[1].type === 'dir';
+            if (aDir !== bDir) return aDir ? -1 : 1;
+            return a[0].localeCompare(b[0]);
+          });
+          const samePath = (a = [], b = []) => {
+            if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+            return a.every((seg, i) => seg === b[i]);
+          };
+          const toKey = (segments = []) => `/${segments.join('/')}`;
+          const fromKey = (key = '/') => key.replace(/^\/+/, '').split('/').filter(Boolean);
+          const calcSize = (node) => {
+            if (!node) return 0;
+            if (node.type === 'dir') return Object.keys(node.children || {}).length;
+            const content = node.content;
+            const text = typeof content === 'string'
+              ? content
+              : content
+                ? content[state.lang] || content.ru || content.en || ''
+                : '';
+            return String(text || '').length;
+          };
+          const tagText = (node) => {
+            const res = [];
+            if (!node) return '';
+            if (node.hidden) res.push(state.lang === 'ru' ? 'скрыто' : 'hidden');
+            if (node.gated) res.push(node.gated);
+            if (node.locked) res.push(node.locked);
+            if (node.glitch) res.push('glitch');
+            if (node.editable) res.push(state.lang === 'ru' ? 'ред.' : 'edit');
+            if (node.executable) res.push(state.lang === 'ru' ? 'exec' : 'exec');
+            return res.length ? res.join(', ') : (state.lang === 'ru' ? '—' : '—');
+          };
+          const getFileContent = (node) => {
+            if (!node || node.type !== 'file') return { blocked: false, text: '' };
+            if (node.gated === 'eye' && !state.flags.eye) return { blocked: true, reason: tLocal.blockedEye };
+            if (node.locked === 'truth' && !state.flags.truth) return { blocked: true, reason: tLocal.blockedTruth };
+            const raw = node.content;
+            const txt = typeof raw === 'string'
+              ? raw
+              : raw
+                ? raw[state.lang] || raw.ru || raw.en || ''
+                : '';
+            return { blocked: false, text: node.glitch ? randomGlitch(txt) : txt };
+          };
+          const updateHiddenBtn = () => {
+            if (!hiddenBtn) return;
+            const label = fm.showHidden
+              ? (fmLabels.hiddenOn || (state.lang === 'ru' ? 'Скрыть скрытые' : 'Hide hidden'))
+              : (fmLabels.hiddenOff || (state.lang === 'ru' ? 'Показать скрытые' : 'Show hidden'));
+            hiddenBtn.textContent = label;
+            hiddenBtn.title = label;
+          };
+          const cleanSelection = () => {
+            if (!fm.selected) return;
+            const parent = ensureDirFm(fm.selected.slice(0, -1));
+            if (!parent) { fm.selected = null; return; }
+            const visible = directoryEntries(parent, { showHidden: fm.showHidden }).some(([name]) => name === fm.selected[fm.selected.length - 1]);
+            if (!visible) fm.selected = null;
+          };
+          const renderPath = () => {
+            if (!pathEl) return;
+            const crumbs = [{ label: 'C:', path: [] }].concat(
+              fm.path.map((seg, idx) => ({ label: seg, path: fm.path.slice(0, idx + 1) }))
+            );
+            const html = crumbs.map((c, idx) => {
+              const sep = idx === crumbs.length - 1 ? '' : '<span class="sep">\\</span>';
+              return `<button class="fm-crumb" data-path="${toKey(c.path)}">${escapeHtml(c.label)}</button>${sep}`;
+            }).join('');
+            pathEl.innerHTML = html || `<button class="fm-crumb" data-path="/">${escapeHtml(tLocal.root)}</button>`;
+          };
+          const renderTree = () => {
+            if (!treeEl) return;
+            const walk = (node, trail = []) => {
+              const entries = sortEntries(directoryEntries(node, { showHidden: fm.showHidden })).filter(([, child]) => child && child.type === 'dir');
+              if (!entries.length) return '';
+              return '<ul>' + entries.map(([name, child]) => {
+                const full = trail.concat(name);
+                const active = samePath(full, fm.path);
+                return `<li><button class="tree-item${active ? ' active' : ''}" data-path="${toKey(full)}">${escapeHtml(name)}</button>${walk(child, full)}</li>`;
+              }).join('') + '</ul>';
+            };
+            const activeRoot = fm.path.length === 0 ? ' active' : '';
+            treeEl.innerHTML = `<div class="tree-root"><button class="tree-item${activeRoot}" data-path="/">${escapeHtml(tLocal.root)}</button>${walk(fmFs, [])}</div>`;
+          };
+          const renderList = () => {
+            if (!rowsEl || !emptyEl) return;
+            const dir = ensureDirFm(fm.path) || fmFs;
+            const entries = sortEntries(directoryEntries(dir, { showHidden: fm.showHidden }));
+            const rows = entries.map(([name, node]) => {
+              const full = fm.path.concat(name);
+              const isDir = node && node.type === 'dir';
+              const size = isDir
+                ? tLocal.dirSummary(directoryEntries(node, { showHidden: fm.showHidden }).length)
+                : tLocal.fileSummary(calcSize(node));
+              const active = fm.selected && samePath(full, fm.selected);
+              return `<div class="fm-row${active ? ' active' : ''}" data-path="${toKey(full)}">
+                <span class="cell name">${escapeHtml(name)}${isDir ? '\\' : ''}</span>
+                <span class="cell type">${escapeHtml(isDir ? (state.lang === 'ru' ? 'Папка' : 'Folder') : (state.lang === 'ru' ? 'Файл' : 'File'))}</span>
+                <span class="cell size">${escapeHtml(size)}</span>
+                <span class="cell tags">${escapeHtml(tagText(node))}</span>
+              </div>`;
+            }).join('');
+            rowsEl.innerHTML = rows;
+            emptyEl.textContent = entries.length ? '' : tLocal.empty;
+            emptyEl.style.display = entries.length ? 'none' : 'block';
+          };
+          const renderPreview = () => {
+            if (!previewBody || !previewMeta || !previewTitle) return;
+            const targetPath = fm.selected || fm.path;
+            const node = resolveNodeFm(targetPath) || resolveNodeFm(fm.path) || fmFs;
+            if (!node) {
+              previewTitle.textContent = fmLabels.preview || (state.lang === 'ru' ? 'Просмотр' : 'Preview');
+              previewMeta.textContent = tLocal.missing;
+              previewBody.textContent = '';
+              return;
+            }
+            const isDir = node.type === 'dir';
+            const tags = tagText(node);
+            const size = isDir
+              ? tLocal.dirSummary(directoryEntries(node, { showHidden: fm.showHidden }).length)
+              : tLocal.fileSummary(calcSize(node));
+            const info = [
+              `${fmLabels.path || (state.lang === 'ru' ? 'Путь' : 'Path')}: ${cmdPathFromSegments(targetPath)}`,
+              `${fmLabels.type || (state.lang === 'ru' ? 'Тип' : 'Type')}: ${isDir ? (state.lang === 'ru' ? 'Папка' : 'Folder') : (state.lang === 'ru' ? 'Файл' : 'File')}`,
+              `${fmLabels.size || (state.lang === 'ru' ? 'Размер' : 'Size')}: ${size}`,
+              `${fmLabels.tags || (state.lang === 'ru' ? 'Метки' : 'Tags')}: ${tags || (state.lang === 'ru' ? '—' : '—')}`,
+            ];
+            previewTitle.textContent = node.name || tLocal.root;
+            previewMeta.innerHTML = info.map(escapeHtml).join('<br>');
+            if (isDir) {
+              const names = sortEntries(directoryEntries(node, { showHidden: fm.showHidden }))
+                .slice(0, 6)
+                .map(([n, child]) => `${n}${child && child.type === 'dir' ? '\\' : ''}`);
+              previewBody.textContent = tLocal.peek(names);
+              return;
+            }
+            const view = getFileContent(node);
+            if (view.blocked) {
+              previewBody.textContent = view.reason || tLocal.blocked;
+              return;
+            }
+            const text = view.text || '';
+            const trimmed = text.length > 1800 ? text.slice(0, 1800) + '…' : text;
+            previewBody.textContent = trimmed || tLocal.empty;
+          };
+          const updateButtons = () => {
+            if (backBtn) backBtn.disabled = fm.historyIndex <= 0;
+            if (forwardBtn) forwardBtn.disabled = fm.historyIndex >= fm.history.length - 1;
+            if (upBtn) upBtn.disabled = fm.path.length === 0;
+            if (homeBtn) homeBtn.disabled = false;
+            if (openBtn) openBtn.disabled = !fm.selected;
+          };
+          const renderAll = () => {
+            cleanSelection();
+            updateHiddenBtn();
+            renderPath();
+            renderTree();
+            renderList();
+            renderPreview();
+            updateButtons();
+          };
+          const pushHistory = (path) => {
+            fm.history = fm.history.slice(0, fm.historyIndex + 1);
+            fm.history.push(path.slice());
+            fm.historyIndex = fm.history.length - 1;
+          };
+          const navigate = (path, opts = {}) => {
+            const dir = ensureDirFm(path);
+            const target = dir ? path.slice() : [];
+            fm.path = target;
+            fm.selected = null;
+            if (opts.push !== false) pushHistory(target);
+            renderAll();
+          };
+          const openSelection = () => {
+            const path = fm.selected || fm.path;
+            const node = resolveNodeFm(path);
+            if (!node) return;
+            if (node.type === 'dir') {
+              navigate(path);
+              return;
+            }
+            const view = getFileContent(node);
+            if (view.blocked) {
+              previewBody.textContent = view.reason || tLocal.blocked;
+              return;
+            }
+            const joined = path.length ? '/' + path.join('/') : '/';
+            appendLine((state.lang === 'ru' ? 'открыт файл: ' : 'opened file: ') + joined, 'system');
+            if (view.text) {
+              const trimmed = view.text.length > 1800 ? view.text.slice(0, 1800) + '…' : view.text;
+              appendLine(trimmed, node.glitch ? 'echo' : 'system');
+            }
+          };
+          const openInTerminal = () => {
+            const target = (() => {
+              if (fm.selected) {
+                const node = resolveNodeFm(fm.selected);
+                if (node && node.type === 'dir') return fm.selected;
+                const parent = fm.selected.slice(0, -1);
+                if (ensureDirFm(parent)) return parent;
+              }
+              return fm.path;
+            })();
+            const dir = ensureDirFm(target);
+            if (!dir) return;
+            if (!state.flags.fsUnified) {
+              appendLine(getTranslations().fsSplit, 'system');
+              return;
+            }
+            state.path = target.slice();
+            setPrompt();
+            const term = shell.querySelector('.win98-window.term');
+            if (term) { term.classList.remove('minimized'); term.dispatchEvent(new Event('mousedown')); }
+            appendLine(`${tLocal.pathSent} ${cmdPathFromSegments(target)}`, 'system');
+          };
+
+          if (win.dataset.init === '1') { renderAll(); return; }
+          win.dataset.init = '1';
+
+          if (rowsEl) {
+            rowsEl.addEventListener('click', (ev) => {
+              const row = ev.target.closest('.fm-row');
+              if (!row) return;
+              const path = fromKey(row.getAttribute('data-path') || '/');
+              fm.selected = path;
+              renderAll();
+            });
+            rowsEl.addEventListener('dblclick', (ev) => {
+              const row = ev.target.closest('.fm-row');
+              if (!row) return;
+              const path = fromKey(row.getAttribute('data-path') || '/');
+              fm.selected = path;
+              openSelection();
+              renderAll();
+            });
+          }
+          if (treeEl) {
+            treeEl.addEventListener('click', (ev) => {
+              const btn = ev.target.closest('.tree-item');
+              if (!btn) return;
+              const path = fromKey(btn.getAttribute('data-path') || '/');
+              navigate(path);
+            });
+          }
+          if (pathEl) {
+            pathEl.addEventListener('click', (ev) => {
+              const crumb = ev.target.closest('.fm-crumb');
+              if (!crumb) return;
+              const path = fromKey(crumb.getAttribute('data-path') || '/');
+              navigate(path);
+            });
+          }
+          win.addEventListener('click', (ev) => {
+            const btn = ev.target.closest('[data-fm]');
+            if (!btn) return;
+            const action = btn.getAttribute('data-fm');
+            if (action === 'hidden') { fm.showHidden = !fm.showHidden; renderAll(); }
+            if (action === 'terminal') { openInTerminal(); }
+            if (action === 'open') { openSelection(); renderAll(); }
+            if (action === 'refresh') { renderAll(); }
+            if (action === 'back' && fm.historyIndex > 0) {
+              fm.historyIndex -= 1;
+              fm.path = fm.history[fm.historyIndex].slice();
+              fm.selected = null;
+              renderAll();
+            }
+            if (action === 'forward' && fm.historyIndex < fm.history.length - 1) {
+              fm.historyIndex += 1;
+              fm.path = fm.history[fm.historyIndex].slice();
+              fm.selected = null;
+              renderAll();
+            }
+            if (action === 'up' && fm.path.length) {
+              navigate(fm.path.slice(0, -1));
+            }
+            if (action === 'home') {
+              navigate(['workspace']);
+            }
+          });
+          renderAll();
         };
 
         
@@ -2284,18 +3561,21 @@
           }
         };
 
-        const listDirectory = (dirNode) => {
+        const directoryEntries = (dirNode, opts = {}) => {
+          const showHidden = !!opts.showHidden;
           if (!dirNode || dirNode.type !== "dir") return [];
           return Object.entries(dirNode.children || {})
             .filter(([name, node]) => {
               if (name === "god" && !state.flags.godVisible) return false;
-              if (node.hidden && !state.flags.scanned) return false;
               if (dirNode.name === "god" && name === "god.log" && !state.flags.godLog)
                 return false;
-              if (node.hidden && state.flags.scanned) return true;
+              if (node.hidden && !state.flags.scanned && !showHidden) return false;
               return true;
-            })
-            .map(([name]) => name);
+            });
+        };
+
+        const listDirectory = (dirNode, opts = {}) => {
+          return directoryEntries(dirNode, opts).map(([name]) => name);
         };
 
         const buildPath = (arg) => {
@@ -2309,6 +3589,133 @@
             else base.push(seg);
           }
           return base;
+        };
+
+        const renderCmdDir = (args = []) => {
+          const showHidden = args.some((a) => a === "/a" || a === "-a" || a === "/ah");
+          const targetArg = args.find((a) => !a.startsWith("/") && !a.startsWith("-")) || "";
+          const path = buildPath(targetArg || "");
+          const dir = ensureDir(path);
+          if (!dir) {
+            appendLine(
+              state.lang === "ru"
+                ? "Система не может найти указанный путь."
+                : "The system cannot find the path specified.",
+              "error"
+            );
+            return;
+          }
+          const entries = directoryEntries(dir, { showHidden });
+          const header = state.lang === "ru"
+            ? ` Каталог ${cmdPathFromSegments(path)}`
+            : ` Directory of ${cmdPathFromSegments(path)}`;
+          const lines = [header, ""];
+          if (!entries.length) {
+            lines.push(state.lang === "ru" ? "  (пусто)" : "  (empty)");
+          } else {
+            entries.forEach(([name, node]) => {
+              const isDir = node && node.type === "dir";
+              const marker = isDir ? "<DIR>" : "     ";
+              lines.push(`  ${marker} ${name}`);
+            });
+          }
+          appendLine(lines.join("\n"));
+        };
+
+        const handleCmdCopy = (args = []) => {
+          if (args.length < 2) {
+            appendLine(state.lang === "ru" ? "Копирование: copy <источник> <цель>" : "Copy: copy <source> <destination>", "error");
+            return;
+          }
+          const [srcRaw, destRaw] = args;
+          const srcPath = buildPath(srcRaw);
+          const srcNode = resolveNode(srcPath);
+          if (!srcNode || srcNode.type !== "file") {
+            appendLine(state.lang === "ru" ? "Исходный файл не найден." : "Source file not found.", "error");
+            return;
+          }
+          const destPath = buildPath(destRaw);
+          const destNode = resolveNode(destPath);
+          let destParent = null;
+          let destName = null;
+          if (destNode && destNode.type === "dir") {
+            destParent = destNode;
+            destName = srcNode.name;
+          } else {
+            [destParent, destName] = resolveParent(destPath);
+          }
+          if (!destParent || destParent.type !== "dir" || !destName) {
+            appendLine(state.lang === "ru" ? "Целевой путь не найден." : "Destination not found.", "error");
+            return;
+          }
+          destParent.children = destParent.children || {};
+          if (destParent.children[destName]) {
+            appendLine(state.lang === "ru" ? "Файл с таким именем уже существует." : "A file with that name already exists.", "error");
+            return;
+          }
+          const clone = JSON.parse(JSON.stringify(srcNode));
+          clone.name = destName;
+          destParent.children[destName] = clone;
+          appendLine(state.lang === "ru" ? "        Скопирован(о) 1 файл(ы)." : "        1 file(s) copied.");
+        };
+
+        const handleCmdRename = (args = []) => {
+          if (args.length < 2) {
+            appendLine(state.lang === "ru" ? "Переименование: ren <что> <во что>" : "Rename: ren <old> <new>", "error");
+            return;
+          }
+          const srcPath = buildPath(args[0]);
+          const [parent, srcName] = resolveParent(srcPath);
+          if (!parent || parent.type !== "dir" || !parent.children || !parent.children[srcName]) {
+            appendLine(state.lang === "ru" ? "Файл не найден." : "File not found.", "error");
+            return;
+          }
+          const destNameRaw = args[1].replace(/\\/g, "/");
+          const parts = destNameRaw.split("/").filter(Boolean);
+          const destName = parts.pop();
+          if (!destName) {
+            appendLine(state.lang === "ru" ? "Некорректное имя." : "Invalid name.", "error");
+            return;
+          }
+          if (parent.children[destName]) {
+            appendLine(state.lang === "ru" ? "Файл с таким именем уже существует." : "A file with that name already exists.", "error");
+            return;
+          }
+          const node = parent.children[srcName];
+          delete parent.children[srcName];
+          node.name = destName;
+          parent.children[destName] = node;
+          appendLine(state.lang === "ru" ? "        Переименован(о) 1 файл(ы)." : "        1 file(s) renamed.");
+        };
+
+        const showCmdBanner = () => {
+          outputEl.innerHTML = "";
+          const lines = state.lang === "ru"
+            ? [
+                "Командная строка selfOS [версия 0.98.0]",
+                "(c) fragment systems. Все права и ошибки защищены.",
+                ""
+              ]
+            : [
+                "selfOS Command Prompt [Version 0.98.0]",
+                "(c) fragment systems. All rights and glitches reserved.",
+                ""
+              ];
+          appendLine(lines.join("\n"));
+        };
+
+        const resetCmdSession = () => {
+          state.path = [];
+          state.cmdHistory = [];
+          state.cmdHistoryIndex = -1;
+          try {
+            const term = document.querySelector('.terminal');
+            if (term) term.classList.remove('cmd-green');
+            const title = document.querySelector('.win98-window.term .title');
+            if (title) title.textContent = state.lang === 'ru' ? 'Командная строка' : 'Command Prompt';
+          } catch {}
+          showCmdBanner();
+          setPrompt();
         };
 
         const ensureSelfFile = (restored = false) => {
@@ -2859,11 +4266,19 @@
               });
               appendLine(label + "\n" + sorted.join(", "), 'system');
               appendLine(state.lang==='ru'?"подсказка: help <команда> — описание команды":"hint: help <command> — show details", 'system');
+              if (state.flags.guiBooted) {
+                appendLine(
+                  state.lang === 'ru'
+                    ? 'cmd-дополнения: dir, cls, type, copy, ren, del, color, title, ver.'
+                    : 'cmd extras: dir, cls, type, copy, ren, del, color, title, ver.',
+                  'system'
+                );
+              }
               return;
             }
             const ru = {
               help: 'help — список команд; help <команда> — описание.',
-              ls: 'ls — показать содержимое каталога (ls [путь])',
+              ls: 'ls — показать содержимое каталога (ls [путь], ls -la — скрытые + детали)',
               cd: 'cd — сменить каталог (cd <путь>), cd без аргументов — в корень',
               cat: 'cat — показать содержимое файла (cat <файл>)',
               nano: 'nano — открыть файл в редакторе',
@@ -2873,7 +4288,7 @@
               stop: 'stop — остановить визуальные/звуковые эффекты',
               run: 'run — запустить скрипт .sh (run <путь>)',
               scan: 'scan — подсветить скрытое',
-              connect: 'connect — попытаться установить связь',
+              connect: 'connect — связь; connect self — слить проводник и cmd',
               disconnect: 'disconnect — разорвать связь',
               
               mount: 'mount — смонтировать /eye (после mirror.sh)',
@@ -2911,7 +4326,7 @@
             };
             const en = {
               help: 'help — list commands; help <command> — details.',
-              ls: 'ls — list directory (ls [path])',
+              ls: 'ls — list directory (ls [path], ls -la shows hidden + details)',
               cd: 'cd — change directory (cd <path>), cd without args goes to /',
               cat: 'cat — print file contents (cat <file>)',
               nano: 'nano — open file in a editor',
@@ -2921,7 +4336,7 @@
               stop: 'stop — stop visual/audio effects',
               run: 'run — execute .sh script (run <path>)',
               scan: 'scan — reveal hidden things',
-              connect: 'connect — try to link',
+              connect: 'connect — try to link; connect self merges explorer+cmd',
               disconnect: 'disconnect — sever the link',
               
               mount: 'mount — mount /eye (after mirror.sh)',
@@ -2959,6 +4374,27 @@
               42: '42 — the answer to your unasked question',
               communion: 'communion listen|kneel|accept|devour|refuse — divine ritual',
             };
+            if (state.flags.guiBooted) {
+              ru.dir = 'dir — показать содержимое каталога (синоним ls)';
+              ru.cls = 'cls — очистить экран (синоним clear)';
+              ru.type = 'type — вывести содержимое файла (синоним cat)';
+              ru.copy = 'copy — копировать файл: copy <источник> <цель>';
+              ru.ren = 'ren — переименовать файл: ren <старое> <новое>';
+              ru.del = 'del — удалить (синоним rm)';
+              ru.color = 'color — сменить схему cmd: color 07 | color 0a';
+              ru.title = 'title — сменить заголовок окна cmd';
+              ru.ver = 'ver — версия cmd';
+
+              en.dir = 'dir — list directory contents (alias of ls)';
+              en.cls = 'cls — clear the screen (alias of clear)';
+              en.type = 'type — print a file (alias of cat)';
+              en.copy = 'copy — copy file: copy <source> <destination>';
+              en.ren = 'ren — rename a file: ren <old> <new>';
+              en.del = 'del — delete (alias of rm)';
+              en.color = 'color — switch cmd palette: color 07 | color 0a';
+              en.title = 'title — change cmd window title';
+              en.ver = 'ver — cmd version info';
+            }
             // add exit help lightly (new simulation) or mark locked
             if (isExitLocked()) {
               ru.exit = 'exit — недоступен.';
@@ -2980,6 +4416,9 @@
           
           // Visual/audio control
           stop: () => {
+            if (typeof stopConnectSelfFx === 'function') {
+              try { stopConnectSelfFx(); } catch {}
+            }
             effects.stopAll();
             audio.stopDrone();
             audio.mute(false);
@@ -3173,21 +4612,82 @@
           shake: () => { effects.shake(); appendLine(getTranslations().shakeNow, 'system'); },
           eyes: (args) => { const on = (args[0]||'on').toLowerCase() !== 'off'; if(on) effects.startEyes(12); else effects.stopEyes(); appendLine(on ? (state.lang==='ru'?'глаза смотрят.':'eyes watch.') : (state.lang==='ru'?'они закрылись.':'they closed.'), 'system'); },
           ls: (args) => {
-            const path = buildPath(args[0] || "");
+            let showAll = false;
+            let longFmt = false;
+            let targetArg = "";
+            for (const a of args) {
+              if (a && a.startsWith("-")) {
+                const flags = a.slice(1);
+                if (flags.includes("a")) showAll = true;
+                if (flags.includes("l")) longFmt = true;
+                continue;
+              }
+              if (!targetArg) targetArg = a;
+            }
+
+            const path = buildPath(targetArg || "");
             const dir = ensureDir(path);
             if (!dir) {
               appendLine("нет такого пути.", "error");
               return;
             }
-            const items = listDirectory(dir);
-            if (!items.length) {
+            const entries = directoryEntries(dir, { showHidden: showAll });
+            if (showAll) {
+              const parentPath = path.slice(0, -1);
+              const parentNode = ensureDir(parentPath) || fs;
+              entries.unshift(["..", parentNode || dir]);
+              entries.unshift([".", dir]);
+            }
+            if (!entries.length) {
               appendLine(random(0, 1) ? "..." : (state.lang === "ru" ? "пусто." : "empty."));
               return;
             }
+
+            const formatEntry = (name, node) => {
+              const isDir = node && node.type === "dir";
+              const exec = !!(node && (node.executable || isDir));
+              const writable = !!(node && (node.editable || isDir));
+              const hidden = !!(node && node.hidden);
+              const typeChar = isDir ? "d" : "-";
+              const perms = `${typeChar}r${writable ? "w" : "-"}${exec ? "x" : "-"}${hidden ? "h" : "-"}`;
+              const size = (() => {
+                if (!node) return 0;
+                if (isDir) return Object.keys(node.children || {}).length;
+                const content = node.content;
+                const text =
+                  typeof content === "string"
+                    ? content
+                    : content
+                    ? content[state.lang] || content.ru || content.en || ""
+                    : "";
+                return String(text || "").length;
+              })();
+              const suffix = isDir ? "/" : "";
+              const tags = [];
+              if (node && node.gated) tags.push(node.gated);
+              if (node && node.locked) tags.push(node.locked);
+              if (node && node.glitch) tags.push("glitch");
+              if (node && node.executable && !isDir) tags.push("x");
+              const meta = tags.length ? `  # ${tags.join(", ")}` : "";
+              const unit = isDir ? "i" : "b";
+              const sizeStr = String(size).padStart(3, " ");
+              return `${perms} ${sizeStr}${unit} ${name}${suffix}${meta}`;
+            };
+
+            if (longFmt) {
+              const lines = entries.map(([name, node]) => formatEntry(name, node));
+              appendLine(lines.join("\n"));
+              randomEvent();
+              return;
+            }
+
+            const names = entries.map(
+              ([name, node]) => `${name}${node && node.type === "dir" ? "/" : ""}`
+            );
             if (Math.random() < 0.18) {
               appendLine("???", "error");
             } else {
-              appendLine(items.join("  "));
+              appendLine(names.join("  "));
               randomEvent();
             }
           },
@@ -3233,7 +4733,7 @@
               return;
             }
             if (file.locked === "truth" && !state.flags.truth) {
-              appendLine(state.lang === "ru" ? "НЕОБХОДИМ ПАРОЛЬ" : "PASSWORD REQURED", "error");
+              appendLine(state.lang === "ru" ? "НЕОБХОДИМ ПАРОЛЬ" : "PASSWORD REQUIRED", "error");
               return;
             }
             const joined = path.join("/");
@@ -3310,7 +4810,7 @@
           nano: (args) => {
             const target = args[0];
             if (!target) {
-              appendLine(state.lang === "ru" ? "НЕОБХОДИМ ПАРОЛЬ" : "PASSWORD REQURED", "error");
+              appendLine(state.lang === "ru" ? "НЕОБХОДИМ ПАРОЛЬ" : "PASSWORD REQUIRED", "error");
               return;
             }
             const path = buildPath(target);
@@ -3324,7 +4824,7 @@
               return;
             }
             if (file.locked === 'truth' && !state.flags.truth) {
-              appendLine(state.lang === "ru" ? "НЕОБХОДИМ ПАРОЛЬ" : "PASSWORD REQURED", "error");
+              appendLine(state.lang === "ru" ? "НЕОБХОДИМ ПАРОЛЬ" : "PASSWORD REQUIRED", "error");
               return;
             }
             const joined = path.join('/');
@@ -3459,7 +4959,24 @@
             typeOut(line, 'system');
             state.whoamiCount = Math.min(state.whoamiCount + 1, maxIdx);
           },
-          connect: () => {
+          connect: (args = []) => {
+            if (args[0] === 'self') {
+              if (!state.flags.guiBooted) {
+                appendLine(getTranslations().fsDesktopOnly, "error");
+                return;
+              }
+              if (state.flags.fsUnified) {
+                appendLine(getTranslations().fsAlready, "system");
+                return;
+              }
+              try { mergeTrees(fs, fmFs); } catch {}
+              fmFs = fs;
+              state.flags.fsUnified = true;
+              appendLine(getTranslations().fsMerged, "system");
+              if (state.guiShellEl) { try { initFileManager(state.guiShellEl); } catch {} }
+              triggerConnectSelfFx();
+              return;
+            }
             if (!state.flags.networkSeen) {
               appendLine(getTranslations().needSignal, "error");
               return;
@@ -3481,8 +4998,7 @@
                     name: "signal.trace",
                     glitch: true,
                     content: {
-                      content: {
-                        ru: `== signal.trace ==
+                      ru: `== signal.trace ==
                       23:59:59 тень подключилась
                       00:00:07 зеркало моргнуло
                       00:01:13 контроль рассинхронизирован
@@ -3491,7 +5007,7 @@
                       >> примечание оператора: источник неизвестен. прослеживается инородная рука
                       >> след: 'depth/void/room0/init.md' (запечатано)
                       `,
-                        en: `== signal.trace ==
+                      en: `== signal.trace ==
                       23:59:59 shadow linked
                       00:00:07 mirror flickered
                       00:01:13 control desynced
@@ -3500,8 +5016,6 @@
                       >> operator note: unknown hand inserted something. foreign signature detected
                       >> trace: depth/void/room0/init.md (sealed)
                       `,
-                      }
-
                     },
                   };
                   state.flags.signalTrace = true;
@@ -3675,6 +5189,7 @@
             setTimeout(() => effects.strobe(false), 800);
             setTimeout(() => {
               appendLine(getTranslations().pingFail, "system");
+              appendLine(state.lang === 'ru' ? 'директория god добавлена' : 'directory god added.', 'system');
             }, 600);
           },
           sudo: (args, raw) => {
@@ -3815,16 +5330,21 @@
         };
 
         const interpret = (input) => {
-          if (state.flags.godEnding || state.flags.doorOpened || state.flags.exitSim) {
-            // Terminal is frozen after endings.
+          if (!state.flags.guiBooted && (state.flags.godEnding || state.flags.doorOpened || state.flags.exitSim)) {
+            // Terminal is frozen after endings (pre-desktop).
             return;
           }
           const trimmed = input.trim();
           if (!trimmed) return;
-          state.history.push(trimmed);
-          state.historyIndex = state.history.length;
+          const isCmdMode = state.flags.guiBooted;
+          const history = isCmdMode ? state.cmdHistory : state.history;
+          history.push(trimmed);
+          if (isCmdMode) state.cmdHistoryIndex = history.length; else state.historyIndex = history.length;
 
-          appendLine(`${getTranslations().prompt(pathToString(state.path))} ${trimmed}`);
+          const promptText = isCmdMode
+            ? `${cmdPathFromSegments(state.path)}>`
+            : getTranslations().prompt(pathToString(state.path));
+          appendLine(`${promptText} ${trimmed}`);
           audio.trigger();
 
           // If a yes/no confirmation is pending, intercept and resolve it
@@ -3845,6 +5365,67 @@
           // special phrase handling
           const lower = trimmed.toLowerCase();
           
+          let tokens = trimmed.split(/\s+/);
+          let command = tokens[0];
+          let args = tokens.slice(1);
+
+          if (isCmdMode) {
+            args = args.map(normalizeCmdArg);
+            const cmdLower = (command || "").toLowerCase();
+            if (cmdLower === 'ver') {
+              const line = state.lang === 'ru'
+                ? 'selfOS CMD версия 0.98.0'
+                : 'selfOS CMD Version 0.98.0';
+              appendLine(line);
+              updateMadness(); randomEvent();
+              return;
+            }
+            if (cmdLower === 'title') {
+              const text = trimmed.slice(command.length).trim() || 'selfOS cmd';
+              const win = document.querySelector('.win98-window.term .title');
+              if (win) win.textContent = text;
+              updateMadness(); randomEvent();
+              return;
+            }
+            if (cmdLower === 'color') {
+              const code = (args[0] || '07').toLowerCase();
+              const term = document.querySelector('.terminal');
+              if (term) {
+                term.classList.remove('cmd-green');
+                if (code === '0a' || code === 'a') term.classList.add('cmd-green');
+              }
+              const msg = state.lang === 'ru'
+                ? `Цветовая схема: ${code === '0a' || code === 'a' ? 'зелёная' : 'классическая'}.`
+                : `Color scheme: ${code === '0a' || code === 'a' ? 'green' : 'classic'}.`;
+              appendLine(msg, 'system');
+              updateMadness(); randomEvent();
+              return;
+            }
+            if (cmdLower === 'dir') {
+              renderCmdDir(args);
+              updateMadness(); randomEvent();
+              return;
+            }
+            if (cmdLower === 'copy') {
+              handleCmdCopy(args);
+              updateMadness(); randomEvent();
+              return;
+            }
+            if (cmdLower === 'ren' || cmdLower === 'rename') {
+              handleCmdRename(args);
+              updateMadness(); randomEvent();
+              return;
+            }
+            if (cmdLower === 'cls') {
+              command = 'clear';
+            } else if (cmdLower === 'type') {
+              command = 'cat';
+            } else if (cmdLower === 'del' || cmdLower === 'erase') {
+              command = 'rm';
+            } else {
+              command = cmdLower;
+            }
+          }
 
           // easter eggs: 'щ' or 'run godmode' -> local rickroll (no external redirect)
           if (lower === 'щ' || lower === 'run godmode') {
@@ -3884,15 +5465,21 @@
           // Cosmetic easter eggs (no gameplay effects)
           if (handleEasterEggs(trimmed)) { updateMadness(); return; }
 
-          const tokens = trimmed.split(/\s+/);
-          const command = tokens[0];
-          const args = tokens.slice(1);
           const handler = commandHandlers[command];
           if (handler) {
             handler(args, trimmed);
           } else {
             // Unknown command (AI removed)
-            appendLine(getTranslations().unknown, 'error');
+            if (isCmdMode) {
+              appendLine(
+                state.lang === 'ru'
+                  ? `'${command}' не является внутренней или внешней командой, исполняемой программой или пакетным файлом.`
+                  : `'${command}' is not recognized as an internal or external command, operable program or batch file.`,
+                'error'
+              );
+            } else {
+              appendLine(getTranslations().unknown, 'error');
+            }
           }
           updateMadness();
           randomEvent();
@@ -3908,6 +5495,7 @@
         inputEl.addEventListener("keydown", (event) => {
           // Tab-based autocompletion for commands and paths
           if (event.key === 'Tab') {
+            if (state.flags.guiBooted) { event.preventDefault(); return; }
             event.preventDefault();
             const PATH_CMDS = new Set(['ls','cd','cat','nano','open','run','mount','grep','chmod','rm','touch']);
             const value = inputEl.value;
@@ -4020,21 +5608,26 @@
             ac.lastTs = now; ac.options = options;
             return;
           }
+          const isCmd = state.flags.guiBooted;
+          const hist = isCmd ? state.cmdHistory : state.history;
+          let idx = isCmd ? state.cmdHistoryIndex : state.historyIndex;
           if (event.key === "ArrowUp") {
-            if (state.historyIndex > 0) {
-              state.historyIndex -= 1;
-              inputEl.value = state.history[state.historyIndex] || "";
+            if (idx > 0) {
+              idx -= 1;
+              inputEl.value = hist[idx] || "";
               setTimeout(() => inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length), 0);
             }
+            if (isCmd) state.cmdHistoryIndex = idx; else state.historyIndex = idx;
             event.preventDefault();
           } else if (event.key === "ArrowDown") {
-            if (state.historyIndex < state.history.length - 1) {
-              state.historyIndex += 1;
-              inputEl.value = state.history[state.historyIndex] || "";
+            if (idx < hist.length - 1) {
+              idx += 1;
+              inputEl.value = hist[idx] || "";
             } else {
-              state.historyIndex = state.history.length;
+              idx = hist.length;
               inputEl.value = "";
             }
+            if (isCmd) state.cmdHistoryIndex = idx; else state.historyIndex = idx;
             event.preventDefault();
           }
         });
