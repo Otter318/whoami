@@ -201,8 +201,6 @@
             needSignal: "need a trail. try `cat var/log/network.log` and brace.",
             scanStart: "New directory .shadow created.",
             shadowNoteIntro: ".shadow/last_world.txt:",
-            shadowNote:
-              "To use doors you need to install them, right? Good thing I added an install command, yeah?\nKidding. Installation is just open. open door.iso, for instance.",
             alreadyScan: "already exposed. if you're blind now, that's on you.",
             whoami: [
               "NULL",
@@ -949,6 +947,35 @@
             historyIndex: -1,
           };
         };
+        const DEFAULT_DESKTOP_SETTINGS = {
+          wallpaper: 'aqua',
+          theme: 'soft',
+          iconScale: 1,
+          clock12: false,
+          showSeconds: false,
+          volume: 35,
+          muted: true,
+          reduceMotion: false,
+          chroma: false,
+          words: false,
+        };
+        const ensureDesktopSettings = () => {
+          const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
+          const merged = { ...DEFAULT_DESKTOP_SETTINGS, ...(state.desktopSettings || {}) };
+          merged.iconScale = clamp(parseFloat(merged.iconScale) || 1, 0.8, 1.3);
+          merged.volume = clamp(parseInt(merged.volume, 10) || DEFAULT_DESKTOP_SETTINGS.volume, 0, 100);
+          merged.clock12 = !!merged.clock12;
+          merged.showSeconds = !!merged.showSeconds;
+          merged.muted = !!merged.muted;
+          merged.reduceMotion = !!merged.reduceMotion;
+          merged.chroma = !!merged.chroma;
+          merged.words = !!merged.words;
+          merged.wallpaper = merged.wallpaper || DEFAULT_DESKTOP_SETTINGS.wallpaper;
+          merged.theme = merged.theme || DEFAULT_DESKTOP_SETTINGS.theme;
+          state.desktopSettings = merged;
+          return merged;
+        };
+        const resetDesktopSettings = () => { state.desktopSettings = { ...DEFAULT_DESKTOP_SETTINGS }; };
 
         const state = {
           path: ["home", "user"],
@@ -967,6 +994,7 @@
             history: [],
             historyIndex: -1,
           },
+          desktopSettings: { ...DEFAULT_DESKTOP_SETTINGS },
           nano: null,
           flags: {
             scanned: false,
@@ -1442,6 +1470,7 @@
         const effects = (() => {
           const termEl = document.querySelector('.terminal');
           const effectTimers = {};
+          const motionReduced = () => !!(state.desktopSettings && state.desktopSettings.reduceMotion);
           const limitEffect = (key, stopFn, ms = 5000) => {
             if (!stopFn) return;
             if (effectTimers[key]) clearTimeout(effectTimers[key]);
@@ -1486,13 +1515,16 @@
           const wordsEl = fxWordsEl;
           const setWords = (on = false) => {
             if (!wordsEl) return;
-            if (!on) wordsEl.innerHTML = '';
+            wordsEl.innerHTML = '';
+            // intentionally no-op: fullscreen words disabled
           };
           const burstWords = () => {};
           const wordsFlood = () => {};
 
           // Class toggles for intensity
           const setTrip = (level) => {
+            const reduced = motionReduced();
+            if (reduced && level && level !== 'off') level = 'soft';
             document.body.classList.remove('trip-soft','trip-hard','trip-max');
             if (level && level !== 'off') {
               document.body.classList.add('trip-' + level);
@@ -1508,14 +1540,19 @@
             }
           };
           const strobe = (on) => {
+            if (motionReduced() && on) { document.body.classList.remove('strobe'); return; }
             document.body.classList.toggle('strobe', !!on);
             if (on) limitEffect('strobe', () => strobe(false));
             else if (effectTimers.strobe) { clearTimeout(effectTimers.strobe); effectTimers.strobe = null; }
           };
           const chroma = (on) => {
+            if (motionReduced() && on) { document.body.classList.remove('rgb'); return; }
+            const persistent = state.desktopSettings && state.desktopSettings.chroma;
             document.body.classList.toggle('rgb', !!on);
-            if (on) limitEffect('chroma', () => chroma(false));
-            else if (effectTimers.chroma) { clearTimeout(effectTimers.chroma); effectTimers.chroma = null; }
+            if (on) {
+              if (persistent && effectTimers.chroma) { clearTimeout(effectTimers.chroma); effectTimers.chroma = null; }
+              else if (!persistent) limitEffect('chroma', () => chroma(false));
+            } else if (effectTimers.chroma) { clearTimeout(effectTimers.chroma); effectTimers.chroma = null; }
           };
           const bloom = (on) => {
             document.body.classList.toggle('bloom', !!on);
@@ -1523,6 +1560,7 @@
             else if (effectTimers.bloom) { clearTimeout(effectTimers.bloom); effectTimers.bloom = null; }
           };
           const shake = (ms = 800) => {
+            if (motionReduced()) { document.body.classList.remove('shake'); return; }
             document.body.classList.add('shake');
             setTimeout(() => document.body.classList.remove('shake'), ms);
           };
@@ -1722,6 +1760,13 @@
           const stopTear = () => { document.body.classList.remove('tear'); tear.innerHTML = ''; };
 
           const meltdown = (ms = 6000) => {
+            const reduced = motionReduced();
+            if (reduced) {
+              setTrip('soft'); chroma(true); setTimeout(() => chroma(false), Math.min(1800, ms));
+              document.body.classList.add('shatter');
+              setTimeout(() => document.body.classList.remove('shatter'), 1200);
+              return;
+            }
             setTrip('max'); strobe(true); chroma(true); bloom(true); shake(ms);
             startCracksLimited(); startTear(); burstWords(24);
             document.body.classList.add('shatter');
@@ -1731,6 +1776,7 @@
 
           // Double-vision ghost overlay — clones terminal briefly with slight offset
           const doubleVision = (ms = 1800) => {
+            if (motionReduced()) return;
             try {
               const ghost = termEl.cloneNode(true);
               ghost.classList.add('double-ghost');
@@ -2630,23 +2676,125 @@
           if (!el) return;
           const update = () => {
             const d = new Date();
-            const hh = String(d.getHours()).padStart(2, '0');
+            const s = ensureDesktopSettings();
+            let hh = d.getHours();
+            let suffix = '';
+            if (s.clock12) {
+              suffix = hh >= 12 ? ' PM' : ' AM';
+              hh = hh % 12 || 12;
+            }
             const mm = String(d.getMinutes()).padStart(2, '0');
-            el.textContent = `${hh}:${mm}`;
+            const ss = s.showSeconds ? `:${String(d.getSeconds()).padStart(2, '0')}` : '';
+            el.textContent = `${String(hh).padStart(2, '0')}:${mm}${ss}${suffix}`;
           };
-          update();
           if (guiClockTimer) clearInterval(guiClockTimer);
-          guiClockTimer = setInterval(update, 15000);
+          update();
+          const interval = ensureDesktopSettings().showSeconds ? 1000 : 15000;
+          guiClockTimer = setInterval(update, interval);
         };
+
+        const refreshDesktopNotes = (shell) => {
+          const noteBody = shell && shell.querySelector('.win98-window.note .note-body');
+          if (!noteBody) return;
+          const t = getTranslations();
+          const settings = ensureDesktopSettings();
+          const lines = typeof t.notes === 'function' ? t.notes(settings) : (t.notes || []);
+          noteBody.innerHTML = lines.map((line) => `<div>${escapeHtml(line)}</div>`).join('');
+        };
+
+        const applyDesktopSettings = (shell) => {
+          const s = ensureDesktopSettings();
+          const desktop = shell && shell.querySelector('.desktop');
+          if (desktop) {
+            desktop.dataset.wallpaper = s.wallpaper;
+            desktop.dataset.theme = s.theme;
+            desktop.style.setProperty('--icon-scale', s.iconScale);
+          }
+          if (shell) layoutDesktopIcons(shell);
+          audio.setVolume(s.volume);
+          audio.mute(s.muted);
+          document.body.classList.toggle('reduce-motion', !!s.reduceMotion);
+          if (s.reduceMotion) { effects.strobe(false); effects.setTrip('off'); effects.setWords(false); }
+          effects.chroma(s.chroma && !s.reduceMotion);
+          if (!s.chroma) effects.chroma(false);
+          if (!s.reduceMotion && s.words) effects.setWords(true);
+          else effects.setWords(false);
+          startGuiClock(shell && shell.querySelector('.gui-clock'));
+          refreshDesktopNotes(shell);
+        };
+
+        const getPaintText = () => state.lang === 'ru'
+          ? {
+              title: 'Paint',
+              task: 'Paint',
+              icon: 'Paint',
+              brush: 'Кисть',
+              eraser: 'Ластик',
+              tools: 'Инструменты',
+              color: 'Цвет',
+              size: 'Толщина',
+              clear: 'Очистить',
+              save: 'Скачать PNG',
+              hint: 'Рисуй мышью или касанием. Двойной клик по холсту очищает.',
+              status: (tool, size, color) => `${tool === 'eraser' ? 'Ластик' : 'Кисть'} · ${size}px · ${color.toUpperCase()}`,
+            }
+          : {
+              title: 'Paint',
+              task: 'Paint',
+              icon: 'Paint',
+              brush: 'Brush',
+              eraser: 'Eraser',
+              tools: 'Tools',
+              color: 'Color',
+              size: 'Size',
+              clear: 'Clear',
+              save: 'Save PNG',
+              hint: 'Draw with mouse or touch. Double-click canvas to clear.',
+              status: (tool, size, color) => `${tool === 'eraser' ? 'Eraser' : 'Brush'} · ${size}px · ${color.toUpperCase()}`,
+            };
+
+        const getNotepadText = () => state.lang === 'ru'
+          ? {
+              title: 'Блокнот',
+              task: 'Блокнот',
+              icon: 'Блокнот',
+              newFile: 'Новый',
+              open: 'Открыть',
+              save: 'Сохранить',
+              wrap: 'Перенос строк',
+              name: 'Имя файла',
+              hint: 'Открывай txt/md/log. Сохраняй локально, текст не уходит в сеть.',
+              placeholder: 'Пиши здесь...',
+              status: (lines, chars, dirty) => `${dirty ? '• ' : ''}${lines} строк · ${chars} символов`,
+              openError: 'Не удалось прочитать файл.',
+            }
+          : {
+              title: 'Notepad',
+              task: 'Notepad',
+              icon: 'Notepad',
+              newFile: 'New',
+              open: 'Open',
+              save: 'Save',
+              wrap: 'Word wrap',
+              name: 'File name',
+              hint: 'Open txt/md/log. Saves locally; nothing is uploaded.',
+              placeholder: 'Start typing...',
+              status: (lines, chars, dirty) => `${dirty ? '• ' : ''}${lines} lines · ${chars} chars`,
+              openError: 'Could not read file.',
+            };
 
         const buildGuiShell = () => {
           if (state.guiShellEl && state.guiShellEl.parentNode) {
             try { state.guiShellEl.remove(); } catch {}
           }
+          const ds = ensureDesktopSettings();
+          const paintTxt = getPaintText();
+          const noteTxt = getNotepadText();
           const t = state.lang === 'ru'
             ? {
                 start: 'Пуск',
                 deskTitle: 'Рабочий стол selfOS',
+                settingsWin: 'Параметры selfOS',
                 sysProps: 'Состояние системы',
                 filesWin: 'Проводник selfOS',
                 status: 'Состояние',
@@ -2663,12 +2811,18 @@
                 taskLog: 'Журнал',
                 taskFiles: 'Проводник',
                 taskTerm: 'Командная строка',
+                taskSettings: 'Параметры',
+                taskNotepad: noteTxt.task,
+                taskPaint: paintTxt.task,
                 icons: {
                   computer: 'selfOS',
                   trash: 'Корзина',
                   logs: 'Логи',
                   files: 'Файлы',
                   net: 'Сеть',
+                  paint: paintTxt.icon,
+                  notepad: noteTxt.icon,
+                  settings: 'Параметры',
                 },
                 logs: [
                   'selfOS: переход в GUI-режим завершён',
@@ -2677,12 +2831,41 @@
                   'god: канал оставлен за порогом',
                   'tty: готов к запуску в окне',
                 ],
-                notes: [
-                  '• Командную строку можно открыть через Пуск → Командная строка.',
-                  '• selfOS работает в мягком цветовом режиме.',
+                notes: (s) => [
+                  '• Параметры и Командная строка: Пуск → Параметры / Командная строка.',
+                  `• Оформление: ${s.wallpaper === 'sunset' ? 'тёплое' : s.wallpaper === 'midnight' ? 'тёмное' : 'мягкое'}.`,
                   '• Вход: fragment (гость).',
-                  '• Звук: отключён, шум подавлен.',
+                  `• Звук: ${s.muted ? 'отключён' : `громкость ${s.volume}%`}.`,
+                  `• Часы: ${s.clock12 ? '12ч' : '24ч'}${s.showSeconds ? ' + секунды' : ''}.`,
                 ],
+                settingsTabs: {
+                  display: 'Экран',
+                  personal: 'Оформление',
+                  sound: 'Звук',
+                  effects: 'Эффекты',
+                },
+                settingsLabels: {
+                  wallpaper: 'Обои',
+                  iconSize: 'Размер ярлыков',
+                  clock: 'Часы',
+                  clock12: '12-часовой формат',
+                  clockSeconds: 'Показывать секунды',
+                  sound: 'Звук',
+                  volume: 'Громкость',
+                  mute: 'Отключить звук',
+                  effects: 'Эффекты',
+                  reduceMotion: 'Без вспышек и тряски',
+                  chroma: 'Цветовые сдвиги',
+                  words: 'Слова на экране',
+                  applyHint: 'Изменения применяются сразу',
+                  reset: 'Сбросить по умолчанию',
+                },
+                wallpapers: {
+                  aqua: 'Бирюзовый туман',
+                  grid: 'Сетка',
+                  sunset: 'Тёплый закат',
+                  midnight: 'Ночная смена',
+                },
                 fm: {
                   back: 'Назад',
                   forward: 'Вперёд',
@@ -2704,6 +2887,7 @@
             : {
                 start: 'Start',
                 deskTitle: 'selfOS desktop',
+                settingsWin: 'selfOS Settings',
                 sysProps: 'System status',
                 filesWin: 'selfOS Explorer',
                 status: 'Status',
@@ -2720,12 +2904,18 @@
                 taskLog: 'Log',
                 taskFiles: 'Files',
                 taskTerm: 'Command Prompt',
+                taskSettings: 'Settings',
+                taskNotepad: noteTxt.task,
+                taskPaint: paintTxt.task,
                 icons: {
                   computer: 'selfOS',
                   trash: 'Bin',
                   logs: 'Logs',
                   files: 'Files',
                   net: 'Network',
+                  paint: paintTxt.icon,
+                  notepad: noteTxt.icon,
+                  settings: 'Settings',
                 },
                 logs: [
                   'selfOS: switched to GUI mode',
@@ -2734,12 +2924,41 @@
                   'god: channel left outside',
                   'tty: ready to launch in window',
                 ],
-                notes: [
-                  '• Open Command Prompt via Start → Command Prompt.',
-                  '• selfOS running in soft color mode.',
+                notes: (s) => [
+                  '• Settings & Command Prompt: Start → Settings / Command Prompt.',
+                  `• Palette: ${s.wallpaper === 'sunset' ? 'warm' : s.wallpaper === 'midnight' ? 'dark' : 'soft'}.`,
                   '• Login: fragment (guest).',
-                  '• Audio muted; noise damped.',
+                  `• Audio: ${s.muted ? 'muted' : `volume ${s.volume}%`}.`,
+                  `• Clock: ${s.clock12 ? '12h' : '24h'}${s.showSeconds ? ' + seconds' : ''}.`,
                 ],
+                settingsTabs: {
+                  display: 'Display',
+                  personal: 'Personalize',
+                  sound: 'Sound',
+                  effects: 'Effects',
+                },
+                settingsLabels: {
+                  wallpaper: 'Wallpaper',
+                  iconSize: 'Icon size',
+                  clock: 'Clock',
+                  clock12: '12-hour format',
+                  clockSeconds: 'Show seconds',
+                  sound: 'Sound',
+                  volume: 'Volume',
+                  mute: 'Mute audio',
+                  effects: 'Effects',
+                  reduceMotion: 'Reduce flashes & shake',
+                  chroma: 'Chromatic shift',
+                  words: 'Words overlay',
+                  applyHint: 'Changes apply instantly',
+                  reset: 'Reset to defaults',
+                },
+                wallpapers: {
+                  aqua: 'Aqua mist',
+                  grid: 'Blueprint grid',
+                  sunset: 'Warm sunset',
+                  midnight: 'Night shift',
+                },
                 fm: {
                   back: 'Back',
                   forward: 'Forward',
@@ -2757,7 +2976,7 @@
                   preview: 'Preview',
                   path: 'Path',
                 },
-              };
+          };
           const statusRows = [
             { k: t.status, v: t.statusOk },
             { k: t.memory, v: t.memoryOk },
@@ -2765,7 +2984,17 @@
             { k: t.net, v: t.netOk },
           ];
           const logs = (t.logs || []).map((line) => `<li>${escapeHtml(line)}</li>`).join('');
-          const notes = (t.notes || []).map((line) => `<div>${escapeHtml(line)}</div>`).join('');
+          const notesList = typeof t.notes === 'function' ? t.notes(ds) : (t.notes || []);
+          const notes = notesList.map((line) => `<div>${escapeHtml(line)}</div>`).join('');
+          const paintPalette = ['#111827','#f8fafc','#2563eb','#0ea5e9','#22c55e','#a855f7','#f97316','#ef4444','#facc15','#9ca3af'];
+          const paintPaletteButtons = paintPalette.map((c) => `<button class="paint-color" data-color="${c}" style="--paint-color:${c}"></button>`).join('');
+          const wallpaperKeys = ['aqua','grid','sunset','midnight'];
+          const wallpaperCards = wallpaperKeys.map((key) => `
+            <label class="wallpaper-card wallpaper-${key}">
+              <input type="radio" name="wallpaper" value="${key}" />
+              <span>${escapeHtml((t.wallpapers && t.wallpapers[key]) || key)}</span>
+            </label>
+          `).join('');
           const shell = document.createElement('div');
           shell.className = 'gui-shell win98';
           shell.innerHTML = `
@@ -2792,9 +3021,21 @@
                   <div class="icon-img term"></div>
                   <div class="icon-label">${escapeHtml(t.taskTerm)}</div>
                 </div>
+                <div class="desktop-icon" data-app="paint">
+                  <div class="icon-img paint"></div>
+                  <div class="icon-label">${escapeHtml(paintTxt.icon)}</div>
+                </div>
+                <div class="desktop-icon" data-app="notepad">
+                  <div class="icon-img notepad"></div>
+                  <div class="icon-label">${escapeHtml(noteTxt.icon)}</div>
+                </div>
                 <div class="desktop-icon" data-app="net">
                   <div class="icon-img net"></div>
                   <div class="icon-label">${escapeHtml(t.icons.net)}</div>
+                </div>
+                <div class="desktop-icon" data-app="settings">
+                  <div class="icon-img settings"></div>
+                  <div class="icon-label">${escapeHtml(t.taskSettings)}</div>
                 </div>
               </div>
               <div class="win98-window sys" data-app="sys">
@@ -2869,6 +3110,152 @@
                   </div>
                 </div>
               </div>
+              <div class="win98-window paint" data-app="paint" data-min-width="520" data-min-height="360">
+                <div class="titlebar">
+                  <span class="title">${escapeHtml(paintTxt.title)}</span>
+                  <div class="title-buttons"><span data-btn="min">_</span><span data-btn="max">□</span><span data-btn="close">×</span></div>
+                </div>
+                <div class="window-body paint-body">
+                  <div class="paint-toolbar">
+                    <div class="paint-group">
+                      <span class="paint-label">${escapeHtml(paintTxt.tools)}</span>
+                      <div class="paint-tools">
+                        <button class="paint-tool active" data-tool="brush">${escapeHtml(paintTxt.brush)}</button>
+                        <button class="paint-tool" data-tool="eraser">${escapeHtml(paintTxt.eraser)}</button>
+                      </div>
+                    </div>
+                    <div class="paint-group">
+                      <span class="paint-label">${escapeHtml(paintTxt.color)}</span>
+                      <div class="paint-colors">${paintPaletteButtons}</div>
+                    </div>
+                    <div class="paint-group">
+                      <span class="paint-label">${escapeHtml(paintTxt.size)}</span>
+                      <div class="paint-size">
+                        <input type="range" min="1" max="42" value="8" data-paint="size" />
+                        <span class="paint-size-value">8px</span>
+                      </div>
+                    </div>
+                    <div class="paint-actions">
+                      <span class="paint-hint">${escapeHtml(paintTxt.hint)}</span>
+                      <div class="paint-btns">
+                        <button class="paint-btn ghost" data-action="clear">${escapeHtml(paintTxt.clear)}</button>
+                        <button class="paint-btn primary" data-action="save">${escapeHtml(paintTxt.save)}</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="paint-surface">
+                    <canvas class="paint-canvas"></canvas>
+                    <div class="paint-status"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="win98-window notepad" data-app="notepad" data-min-width="440" data-min-height="360">
+                <div class="titlebar">
+                  <span class="title">${escapeHtml(noteTxt.title)}</span>
+                  <div class="title-buttons"><span data-btn="min">_</span><span data-btn="max">□</span><span data-btn="close">×</span></div>
+                </div>
+                <div class="window-body pad-body">
+                  <div class="pad-toolbar">
+                    <div class="pad-group">
+                      <button class="pad-btn primary" data-pad="new">${escapeHtml(noteTxt.newFile)}</button>
+                      <button class="pad-btn" data-pad="open">${escapeHtml(noteTxt.open)}</button>
+                      <button class="pad-btn" data-pad="save">${escapeHtml(noteTxt.save)}</button>
+                      <input type="file" class="pad-file" accept=".txt,.md,.log,.json,text/plain" hidden />
+                    </div>
+                    <div class="pad-group gap">
+                      <label class="pad-label">
+                        <span>${escapeHtml(noteTxt.name)}</span>
+                        <input class="pad-name" type="text" value="note.txt" />
+                      </label>
+                      <label class="pad-wrap">
+                        <input type="checkbox" data-pad="wrap" checked />
+                        <span>${escapeHtml(noteTxt.wrap)}</span>
+                      </label>
+                    </div>
+                    <div class="pad-hint">${escapeHtml(noteTxt.hint)}</div>
+                  </div>
+                  <div class="pad-area-wrap">
+                    <textarea class="pad-area" spellcheck="false" placeholder="${escapeHtml(noteTxt.placeholder)}"></textarea>
+                  </div>
+                  <div class="pad-status"></div>
+                </div>
+              </div>
+              <div class="win98-window settings" data-app="settings" data-min-width="560" data-min-height="420">
+                <div class="titlebar">
+                  <span class="title">${escapeHtml(t.settingsWin)}</span>
+                  <div class="title-buttons"><span data-btn="min">_</span><span data-btn="max">□</span><span data-btn="close">×</span></div>
+                </div>
+                <div class="window-body settings-body">
+                  <div class="settings-tabs">
+                    <button class="settings-tab active" data-tab="display">${escapeHtml(t.settingsTabs.display)}</button>
+                    <button class="settings-tab" data-tab="personal">${escapeHtml(t.settingsTabs.personal)}</button>
+                    <button class="settings-tab" data-tab="sound">${escapeHtml(t.settingsTabs.sound)}</button>
+                    <button class="settings-tab" data-tab="effects">${escapeHtml(t.settingsTabs.effects)}</button>
+                  </div>
+                  <div class="settings-pane active" data-tab="display">
+                    <div class="settings-group">
+                      <div class="settings-group-title">${escapeHtml(t.settingsLabels.clock)}</div>
+                      <label class="settings-option">
+                        <input type="checkbox" data-setting="clock12" />
+                        <span>${escapeHtml(t.settingsLabels.clock12)}</span>
+                      </label>
+                      <label class="settings-option">
+                        <input type="checkbox" data-setting="showSeconds" />
+                        <span>${escapeHtml(t.settingsLabels.clockSeconds)}</span>
+                      </label>
+                    </div>
+                    <div class="settings-group">
+                      <div class="settings-group-title">${escapeHtml(t.settingsLabels.iconSize)}</div>
+                      <div class="settings-range">
+                        <input type="range" min="0.8" max="1.3" step="0.05" data-setting="iconScale" />
+                        <span class="settings-range-value" data-setting="iconScaleValue">100%</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="settings-pane" data-tab="personal">
+                    <div class="settings-group">
+                      <div class="settings-group-title">${escapeHtml(t.settingsLabels.wallpaper)}</div>
+                      <div class="wallpaper-grid">
+                        ${wallpaperCards}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="settings-pane" data-tab="sound">
+                    <div class="settings-group">
+                      <div class="settings-group-title">${escapeHtml(t.settingsLabels.sound)}</div>
+                      <div class="settings-range">
+                        <input type="range" min="0" max="100" step="1" data-setting="volume" />
+                        <span class="settings-range-value" data-setting="volumeValue">35%</span>
+                      </div>
+                      <label class="settings-option">
+                        <input type="checkbox" data-setting="muted" />
+                        <span>${escapeHtml(t.settingsLabels.mute)}</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="settings-pane" data-tab="effects">
+                    <div class="settings-group">
+                      <div class="settings-group-title">${escapeHtml(t.settingsLabels.effects)}</div>
+                      <label class="settings-option">
+                        <input type="checkbox" data-setting="reduceMotion" />
+                        <span>${escapeHtml(t.settingsLabels.reduceMotion)}</span>
+                      </label>
+                      <label class="settings-option">
+                        <input type="checkbox" data-setting="chroma" />
+                        <span>${escapeHtml(t.settingsLabels.chroma)}</span>
+                      </label>
+                      <label class="settings-option">
+                        <input type="checkbox" data-setting="words" />
+                        <span>${escapeHtml(t.settingsLabels.words)}</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="settings-footer">
+                    <span class="settings-hint">${escapeHtml(t.settingsLabels.applyHint)}</span>
+                    <button class="settings-reset" data-setting="reset">${escapeHtml(t.settingsLabels.reset)}</button>
+                  </div>
+                </div>
+              </div>
               <div class="win98-window term" data-app="terminal">
                 <div class="titlebar">
                   <span class="title">${escapeHtml(t.taskTerm)}</span>
@@ -2884,6 +3271,9 @@
               <div class="start-menu">
                 <div class="start-item" data-app="terminal">${escapeHtml(t.taskTerm)}</div>
                 <div class="start-item" data-app="files">${escapeHtml(t.taskFiles)}</div>
+                <div class="start-item" data-app="notepad">${escapeHtml(noteTxt.task)}</div>
+                <div class="start-item" data-app="paint">${escapeHtml(paintTxt.task)}</div>
+                <div class="start-item" data-app="settings">${escapeHtml(t.taskSettings)}</div>
                 <div class="start-item" data-app="log">${escapeHtml(t.taskLog)}</div>
                 <div class="start-item" data-app="note">${escapeHtml(t.noteWin)}</div>
                 <div class="start-item" data-app="sys">${escapeHtml(t.sysProps)}</div>
@@ -2892,6 +3282,9 @@
                 <div class="task-btn active" data-app="desktop">${escapeHtml(t.taskDesktop)}</div>
                 <div class="task-btn" data-app="log">${escapeHtml(t.taskLog)}</div>
                 <div class="task-btn" data-app="files">${escapeHtml(t.taskFiles)}</div>
+                <div class="task-btn" data-app="notepad">${escapeHtml(noteTxt.task)}</div>
+                <div class="task-btn" data-app="paint">${escapeHtml(paintTxt.task)}</div>
+                <div class="task-btn" data-app="settings">${escapeHtml(t.taskSettings)}</div>
                 <div class="task-btn" data-app="terminal">${escapeHtml(t.taskTerm)}</div>
               </div>
               <div class="tray">
@@ -2903,11 +3296,14 @@
           `;
           document.body.appendChild(shell);
           state.guiShellEl = shell;
-          startGuiClock(shell.querySelector('.gui-clock'));
           mountTerminal(shell);
           initWindowControls(shell);
           initDesktopIcons(shell);
           initFileManager(shell);
+          initPaint(shell);
+          initNotepad(shell);
+          initSettings(shell);
+          applyDesktopSettings(shell);
         };
 
         const mountTerminal = (shell) => {
@@ -2933,6 +3329,9 @@
             default: { w: 260, h: 160 },
             files: { w: 560, h: 320 },
             term: { w: 420, h: 320 },
+            paint: { w: 520, h: 360 },
+            notepad: { w: 440, h: 360 },
+            settings: { w: 560, h: 420 },
           };
           const getMinSize = (win) => {
             const app = win.getAttribute('data-app');
@@ -3098,19 +3497,27 @@
           });
         };
 
-        const initDesktopIcons = (shell) => {
+        const layoutDesktopIcons = (shell) => {
           const icons = Array.from(shell.querySelectorAll('.desktop-icon'));
-          const spacingY = 96;
-          const spacingX = 88;
+          if (!icons.length) return;
+          const s = ensureDesktopSettings();
+          const spacingY = 96 * (s.iconScale || 1);
+          const spacingX = 88 * (s.iconScale || 1);
+          const offsetY = 44 * (s.iconScale || 1);
           let col = 0, row = 0;
-          icons.forEach((icon, idx) => {
+          icons.forEach((icon) => {
             const x = col * spacingX;
-            const y = row * spacingY + 44;
+            const y = row * spacingY + offsetY;
             icon.style.left = `${x}px`;
             icon.style.top = `${y}px`;
             col += 1;
             if (col >= 2) { col = 0; row += 1; }
           });
+        };
+
+        const initDesktopIcons = (shell) => {
+          const icons = Array.from(shell.querySelectorAll('.desktop-icon'));
+          layoutDesktopIcons(shell);
           const bringWindow = (app) => {
             const win = shell.querySelector(`.win98-window[data-app="${app}"]`);
             if (win) {
@@ -3479,7 +3886,440 @@
           renderAll();
         };
 
-        
+        const initPaint = (shell) => {
+          const win = shell.querySelector('.win98-window.paint');
+          if (!win) return;
+          if (win.dataset.init === '1') return;
+          const canvas = win.querySelector('.paint-canvas');
+          const surface = win.querySelector('.paint-surface') || (canvas && canvas.parentElement);
+          const sizeInput = win.querySelector('[data-paint="size"]');
+          const sizeValue = win.querySelector('.paint-size-value');
+          const colorButtons = Array.from(win.querySelectorAll('.paint-color'));
+          const toolButtons = Array.from(win.querySelectorAll('.paint-tool'));
+          const statusEl = win.querySelector('.paint-status');
+          const clearBtn = win.querySelector('[data-action="clear"]');
+          const saveBtn = win.querySelector('[data-action="save"]');
+          const paintTxt = getPaintText();
+          if (!canvas || !surface) return;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+          win.dataset.init = '1';
+
+          const MAX_SIZE = 42;
+          let tool = 'brush';
+          let color = '#2563eb';
+          let size = Number(sizeInput && sizeInput.value) || 8;
+          let drawing = false;
+          let last = { x: 0, y: 0 };
+          let viewW = 0;
+          let viewH = 0;
+
+          const updateStatus = () => {
+            if (!statusEl) return;
+            const txt = paintTxt && paintTxt.status
+              ? paintTxt.status(tool, size, color)
+              : `${tool} · ${size}px · ${color}`;
+            statusEl.textContent = txt;
+          };
+          const setSize = (v) => {
+            const parsed = Math.max(1, Math.min(MAX_SIZE, Math.round(v || size)));
+            size = parsed;
+            if (sizeInput) sizeInput.value = String(parsed);
+            if (sizeValue) sizeValue.textContent = `${parsed}px`;
+            updateStatus();
+          };
+          const setTool = (next) => {
+            tool = next || 'brush';
+            toolButtons.forEach((btn) => btn.classList.toggle('active', btn.getAttribute('data-tool') === tool));
+            updateStatus();
+          };
+          const setColor = (next) => {
+            if (!next) return;
+            color = next;
+            colorButtons.forEach((btn) => btn.classList.toggle('active', btn.getAttribute('data-color') === color));
+            updateStatus();
+          };
+
+          const resizeCanvas = () => {
+            const rect = surface.getBoundingClientRect();
+            viewW = Math.max(220, Math.floor(rect.width || 0));
+            viewH = Math.max(220, Math.floor(rect.height || 0));
+            const ratio = window.devicePixelRatio || 1;
+            const snapshot = document.createElement('canvas');
+            snapshot.width = canvas.width;
+            snapshot.height = canvas.height;
+            if (canvas.width && canvas.height) {
+              const snapCtx = snapshot.getContext('2d');
+              if (snapCtx) snapCtx.drawImage(canvas, 0, 0);
+            }
+            canvas.width = viewW * ratio;
+            canvas.height = viewH * ratio;
+            canvas.style.width = `${viewW}px`;
+            canvas.style.height = `${viewH}px`;
+            ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.imageSmoothingEnabled = true;
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, viewW, viewH);
+            if (snapshot.width && snapshot.height) {
+              ctx.drawImage(snapshot, 0, 0, snapshot.width, snapshot.height, 0, 0, viewW, viewH);
+            }
+            updateStatus();
+          };
+
+          const clearCanvas = () => {
+            drawing = false;
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, viewW || canvas.width, viewH || canvas.height);
+            updateStatus();
+          };
+
+          const pointFromEvent = (ev) => {
+            const rect = canvas.getBoundingClientRect();
+            return {
+              x: ev.clientX - rect.left,
+              y: ev.clientY - rect.top,
+            };
+          };
+
+          const strokeTo = (x, y) => {
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.strokeStyle = tool === 'eraser' ? '#ffffff' : color;
+            ctx.lineWidth = size;
+            ctx.beginPath();
+            ctx.moveTo(last.x, last.y);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            last = { x, y };
+          };
+
+          const startStroke = (ev) => {
+            if (ev.button !== undefined && ev.button !== 0 && ev.pointerType !== 'touch' && ev.pointerType !== 'pen') return;
+            ev.preventDefault();
+            const { x, y } = pointFromEvent(ev);
+            drawing = true;
+            last = { x, y };
+            strokeTo(x + 0.01, y + 0.01);
+            try { canvas.setPointerCapture(ev.pointerId); } catch {}
+          };
+
+          const moveStroke = (ev) => {
+            if (!drawing) return;
+            if (ev.buttons === 0) { endStroke(ev); return; }
+            const { x, y } = pointFromEvent(ev);
+            strokeTo(x, y);
+          };
+
+          const endStroke = (ev) => {
+            if (!drawing) return;
+            drawing = false;
+            try { canvas.releasePointerCapture(ev.pointerId); } catch {}
+          };
+
+          const saveImage = () => {
+            try {
+              const link = document.createElement('a');
+              const stamp = new Date();
+              const name = `selfpaint-${String(stamp.getHours()).padStart(2, '0')}${String(stamp.getMinutes()).padStart(2, '0')}${String(stamp.getSeconds()).padStart(2, '0')}.png`;
+              link.download = name;
+              link.href = canvas.toDataURL('image/png');
+              link.click();
+              link.remove();
+            } catch {}
+          };
+
+          if (sizeInput) {
+            sizeInput.addEventListener('input', (ev) => {
+              const v = Number(ev.target.value) || size;
+              setSize(v);
+            });
+          }
+          toolButtons.forEach((btn) => {
+            btn.addEventListener('click', () => setTool(btn.getAttribute('data-tool') || 'brush'));
+          });
+          colorButtons.forEach((btn) => {
+            btn.addEventListener('click', () => setColor(btn.getAttribute('data-color') || color));
+          });
+          if (clearBtn) clearBtn.addEventListener('click', () => clearCanvas());
+          if (saveBtn) saveBtn.addEventListener('click', saveImage);
+
+          canvas.addEventListener('pointerdown', startStroke);
+          canvas.addEventListener('pointermove', moveStroke);
+          window.addEventListener('pointerup', endStroke);
+          canvas.addEventListener('pointerleave', endStroke);
+          canvas.addEventListener('dblclick', (ev) => { ev.preventDefault(); clearCanvas(); });
+          canvas.addEventListener('contextmenu', (ev) => ev.preventDefault());
+
+          const defaultColor = (() => {
+            const preset = colorButtons.find((btn) => (btn.getAttribute('data-color') || '').toLowerCase() === '#2563eb');
+            if (preset) return '#2563eb';
+            if (colorButtons[0]) return colorButtons[0].getAttribute('data-color') || color;
+            return color;
+          })();
+          setSize(size);
+          setTool(tool);
+          setColor(defaultColor);
+          updateStatus();
+          requestAnimationFrame(resizeCanvas);
+          try {
+            const ro = new ResizeObserver(resizeCanvas);
+            ro.observe(surface);
+            win._paintResizeObserver = ro;
+          } catch {
+            window.addEventListener('resize', resizeCanvas);
+          }
+        };
+
+        const initNotepad = (shell) => {
+          const win = shell.querySelector('.win98-window.notepad');
+          if (!win) return;
+          if (win.dataset.init === '1') return;
+          const area = win.querySelector('.pad-area');
+          const statusEl = win.querySelector('.pad-status');
+          const nameInput = win.querySelector('.pad-name');
+          const wrapToggle = win.querySelector('[data-pad="wrap"]');
+          const fileInput = win.querySelector('.pad-file');
+          const btnNew = win.querySelector('[data-pad="new"]');
+          const btnOpen = win.querySelector('[data-pad="open"]');
+          const btnSave = win.querySelector('[data-pad="save"]');
+          const noteTxt = getNotepadText();
+          if (!area) return;
+          win.dataset.init = '1';
+
+          let filename = (nameInput && nameInput.value) || 'note.txt';
+          let dirty = false;
+
+          const setFilename = (name) => {
+            filename = name || 'note.txt';
+            if (nameInput) nameInput.value = filename;
+          };
+
+          const setDirty = (flag) => {
+            dirty = !!flag;
+            updateStatus();
+          };
+
+          const updateStatus = () => {
+            const text = area.value || '';
+            const lines = text.split(/\n/).length;
+            const chars = text.length;
+            if (statusEl) statusEl.textContent = noteTxt.status(lines, chars, dirty);
+          };
+
+          const setWrap = (on) => {
+            if (on) {
+              area.setAttribute('wrap', 'soft');
+              area.style.whiteSpace = 'pre-wrap';
+            } else {
+              area.setAttribute('wrap', 'off');
+              area.style.whiteSpace = 'pre';
+            }
+            if (wrapToggle) wrapToggle.checked = on;
+          };
+
+          const newFile = () => {
+            area.value = '';
+            setFilename('note.txt');
+            setDirty(false);
+            updateStatus();
+            area.focus();
+          };
+
+          const openFile = () => {
+            if (fileInput) fileInput.click();
+          };
+
+          const saveFile = () => {
+            try {
+              const blob = new Blob([area.value || ''], { type: 'text/plain' });
+              const link = document.createElement('a');
+              link.download = filename || 'note.txt';
+              link.href = URL.createObjectURL(blob);
+              link.click();
+              setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+              setDirty(false);
+            } catch {
+              /* no-op */
+            }
+          };
+
+          if (wrapToggle) {
+            wrapToggle.addEventListener('change', () => {
+              setWrap(!!wrapToggle.checked);
+            });
+          }
+          setWrap(!wrapToggle || wrapToggle.checked);
+
+          if (nameInput) {
+            nameInput.addEventListener('input', () => {
+              const val = (nameInput.value || '').trim();
+              setFilename(val || 'note.txt');
+            });
+          }
+
+          if (btnNew) btnNew.addEventListener('click', newFile);
+          if (btnOpen) btnOpen.addEventListener('click', openFile);
+          if (btnSave) btnSave.addEventListener('click', saveFile);
+
+          if (fileInput) {
+            fileInput.addEventListener('change', (ev) => {
+              const file = ev.target.files && ev.target.files[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                try {
+                  area.value = String(e.target.result || '');
+                  setFilename(file.name || 'note.txt');
+                  setDirty(false);
+                  updateStatus();
+                } catch {
+                  if (statusEl) statusEl.textContent = noteTxt.openError;
+                }
+              };
+              reader.onerror = () => {
+                if (statusEl) statusEl.textContent = noteTxt.openError;
+              };
+              reader.readAsText(file);
+            });
+          }
+
+          const insertAtCursor = (txt) => {
+            const start = area.selectionStart || 0;
+            const end = area.selectionEnd || 0;
+            const value = area.value || '';
+            area.value = value.slice(0, start) + txt + value.slice(end);
+            const pos = start + txt.length;
+            area.selectionStart = pos;
+            area.selectionEnd = pos;
+          };
+
+          area.addEventListener('input', () => setDirty(true));
+          area.addEventListener('keyup', updateStatus);
+          area.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Tab') {
+              ev.preventDefault();
+              insertAtCursor('  ');
+              setDirty(true);
+              updateStatus();
+            }
+          });
+
+          newFile();
+          updateStatus();
+        };
+
+        const initSettings = (shell) => {
+          const win = shell.querySelector('.win98-window.settings');
+          if (!win) return;
+          if (win.dataset.init === '1') return;
+          win.dataset.init = '1';
+          const tabs = Array.from(win.querySelectorAll('.settings-tab'));
+          const panes = Array.from(win.querySelectorAll('.settings-pane'));
+          const iconScaleInput = win.querySelector('[data-setting="iconScale"]');
+          const iconScaleValue = win.querySelector('[data-setting="iconScaleValue"]');
+          const volumeInput = win.querySelector('[data-setting="volume"]');
+          const volumeValue = win.querySelector('[data-setting="volumeValue"]');
+          const wallInputs = Array.from(win.querySelectorAll('input[name="wallpaper"]'));
+
+          const setTab = (tab) => {
+            tabs.forEach((t) => t.classList.toggle('active', t.getAttribute('data-tab') === tab));
+            panes.forEach((p) => p.classList.toggle('active', p.getAttribute('data-tab') === tab));
+          };
+
+          tabs.forEach((tab) => {
+            tab.addEventListener('click', () => {
+              const target = tab.getAttribute('data-tab');
+              if (!target) return;
+              setTab(target);
+            });
+          });
+
+          const sync = () => {
+            const s = ensureDesktopSettings();
+            if (iconScaleInput) {
+              iconScaleInput.value = s.iconScale;
+              if (iconScaleValue) iconScaleValue.textContent = `${Math.round(s.iconScale * 100)}%`;
+            }
+            if (volumeInput) {
+              volumeInput.value = s.volume;
+              if (volumeValue) volumeValue.textContent = `${s.volume}%`;
+            }
+            const setChecked = (selector, val) => {
+              const el = win.querySelector(selector);
+              if (el) el.checked = !!val;
+            };
+            setChecked('[data-setting="clock12"]', s.clock12);
+            setChecked('[data-setting="showSeconds"]', s.showSeconds);
+            setChecked('[data-setting="muted"]', s.muted);
+            setChecked('[data-setting="reduceMotion"]', s.reduceMotion);
+            setChecked('[data-setting="chroma"]', s.chroma);
+            setChecked('[data-setting="words"]', s.words);
+            wallInputs.forEach((input) => {
+              input.checked = (input.value || '') === s.wallpaper;
+            });
+          };
+
+          const applyAndSync = () => {
+            applyDesktopSettings(shell);
+            sync();
+          };
+
+          if (iconScaleInput) {
+            iconScaleInput.addEventListener('input', () => {
+              const s = ensureDesktopSettings();
+              s.iconScale = parseFloat(iconScaleInput.value) || s.iconScale;
+              applyAndSync();
+            });
+          }
+          if (volumeInput) {
+            volumeInput.addEventListener('input', () => {
+              const s = ensureDesktopSettings();
+              s.volume = Math.max(0, Math.min(100, parseInt(volumeInput.value, 10) || s.volume));
+              if (s.volume === 0) s.muted = true;
+              if (s.volume > 0 && s.muted) s.muted = false;
+              applyAndSync();
+            });
+          }
+          const bindCheck = (selector, key) => {
+            const el = win.querySelector(selector);
+            if (el) {
+              el.addEventListener('change', () => {
+                const s = ensureDesktopSettings();
+                s[key] = !!el.checked;
+                applyAndSync();
+              });
+            }
+          };
+          bindCheck('[data-setting="clock12"]', 'clock12');
+          bindCheck('[data-setting="showSeconds"]', 'showSeconds');
+          bindCheck('[data-setting="muted"]', 'muted');
+          bindCheck('[data-setting="reduceMotion"]', 'reduceMotion');
+          bindCheck('[data-setting="chroma"]', 'chroma');
+          bindCheck('[data-setting="words"]', 'words');
+
+          wallInputs.forEach((input) => {
+            input.addEventListener('change', () => {
+              if (!input.checked) return;
+              const s = ensureDesktopSettings();
+              s.wallpaper = input.value || s.wallpaper;
+              applyAndSync();
+            });
+          });
+
+          const resetBtn = win.querySelector('[data-setting="reset"]');
+          if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+              resetDesktopSettings();
+              applyAndSync();
+              setTab('display');
+            });
+          }
+
+          setTab('display');
+          sync();
+        };
 
         const triggerGodEnding = (type) => {
           if (state.flags.godEnding) return;
