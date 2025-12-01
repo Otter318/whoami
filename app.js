@@ -2850,6 +2850,9 @@
                   clock: 'Часы',
                   clock12: '12-часовой формат',
                   clockSeconds: 'Показывать секунды',
+                  language: 'Язык интерфейса',
+                  langRu: 'Русский',
+                  langEn: 'English',
                   sound: 'Звук',
                   volume: 'Громкость',
                   mute: 'Отключить звук',
@@ -2943,6 +2946,9 @@
                   clock: 'Clock',
                   clock12: '12-hour format',
                   clockSeconds: 'Show seconds',
+                  language: 'Interface language',
+                  langRu: 'Русский',
+                  langEn: 'English',
                   sound: 'Sound',
                   volume: 'Volume',
                   mute: 'Mute audio',
@@ -3202,6 +3208,17 @@
                       <label class="settings-option">
                         <input type="checkbox" data-setting="showSeconds" />
                         <span>${escapeHtml(t.settingsLabels.clockSeconds)}</span>
+                      </label>
+                    </div>
+                    <div class="settings-group">
+                      <div class="settings-group-title">${escapeHtml(t.settingsLabels.language)}</div>
+                      <label class="settings-option">
+                        <input type="radio" name="lang" value="ru" />
+                        <span>${escapeHtml(t.settingsLabels.langRu)}</span>
+                      </label>
+                      <label class="settings-option">
+                        <input type="radio" name="lang" value="en" />
+                        <span>${escapeHtml(t.settingsLabels.langEn)}</span>
                       </label>
                     </div>
                     <div class="settings-group">
@@ -4222,6 +4239,7 @@
           const volumeInput = win.querySelector('[data-setting="volume"]');
           const volumeValue = win.querySelector('[data-setting="volumeValue"]');
           const wallInputs = Array.from(win.querySelectorAll('input[name="wallpaper"]'));
+          const langInputs = Array.from(win.querySelectorAll('input[name="lang"]'));
 
           const setTab = (tab) => {
             tabs.forEach((t) => t.classList.toggle('active', t.getAttribute('data-tab') === tab));
@@ -4258,6 +4276,9 @@
             setChecked('[data-setting="words"]', s.words);
             wallInputs.forEach((input) => {
               input.checked = (input.value || '') === s.wallpaper;
+            });
+            langInputs.forEach((input) => {
+              input.checked = (input.value || '') === state.lang;
             });
           };
 
@@ -4305,6 +4326,15 @@
               const s = ensureDesktopSettings();
               s.wallpaper = input.value || s.wallpaper;
               applyAndSync();
+            });
+          });
+
+          langInputs.forEach((input) => {
+            input.addEventListener('change', () => {
+              if (!input.checked) return;
+              const val = input.value || 'ru';
+              applyLanguage(val, { refreshGui: state.flags.guiBooted });
+              // rebuild will re-init settings; no need to sync this instance
             });
           });
 
@@ -6159,10 +6189,11 @@
                 appendLine(getTranslations().invalidLang, "error");
                 return;
               }
-              const msg = getTranslations().translated(targetLang);
-              state.lang = targetLang;
+              const msg = translations[targetLang].translated
+                ? translations[targetLang].translated(targetLang)
+                : (targetLang === 'ru' ? 'язык: ru' : 'language: en');
+              applyLanguage(targetLang, { refreshGui: state.flags.guiBooted });
               appendLine(msg, "system");
-              setPrompt();
             } else {
               appendLine(state.lang === "ru" ? "непонятный set." : "set unclear.", "error");
             }
@@ -6518,9 +6549,14 @@
           }, 120);
         };
 
-        const applyLanguage = (lang) => {
-          state.lang = (lang === 'en') ? 'en' : 'ru';
+        const applyLanguage = (lang, opts = {}) => {
+          const target = translations[lang] ? lang : 'ru';
+          state.lang = target;
           try { document.documentElement.setAttribute('lang', state.lang); } catch {}
+          setPrompt();
+          if (opts.refreshGui && state.guiShellEl) {
+            buildGuiShell();
+          }
         };
 
         const beginGame = () => {
