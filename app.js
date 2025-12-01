@@ -733,8 +733,8 @@
                     type: "file",
                     name: "motd",
                     content: txt(
-                      "Используйте \"ls\", чтобы проверить содержимое текущей папки, \"cd\" чтобы выбрать другую папку, \"cat\" чтобы посмотреть содержимое файла, \"help\" для просмотра остальных команд.",
-                      "Use \"ls\" to check the current folder, \"cd\" to move, \"cat\" to read a file, and \"help\" to see other commands."
+                      "Используйте \"ls\", чтобы проверить содержимое текущей папки, \"cd\" чтобы выбрать другую папку, \"cat\" чтобы посмотреть содержимое файла, \"help\" для просмотра остальных команд.\nAnd use \"run mirror.sh\"",
+                      "Use \"ls\" to check the current folder, \"cd\" to move, \"cat\" to read a file, and \"help\" to see other commands.\nAnd use \"run mirror.sh\""
                     ),
                   },
                 },
