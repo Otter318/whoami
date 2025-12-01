@@ -4398,7 +4398,10 @@
             document.body.classList.add('taskmgr-crash');
             try { inputEl.disabled = true; inputEl.blur(); } catch {}
             try { effects.meltdown(8000); } catch {}
-            try { audio.scream(2.4); } catch {}
+            try {
+              audio.scream(3.2);
+              setTimeout(() => audio.scream(2.8), 520);
+            } catch {}
             spawnCrashOverlay();
           };
 
