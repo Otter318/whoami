@@ -995,7 +995,15 @@
             historyIndex: -1,
           },
           desktopSettings: { ...DEFAULT_DESKTOP_SETTINGS },
+          taskMgr: { cpuTimer: null, streamTimer: null, crashActive: false },
+          arcade: {
+            nebula: { bestTime: null, bestMoves: null },
+            pulse: { bestScore: 0, bestCombo: 0 },
+            compost: { bestScore: 0, bestWave: 0 },
+          },
           nano: null,
+          arcadeKeyHandler: null,
+          arcadeResizeHandler: null,
           flags: {
             scanned: false,
             networkSeen: false,
@@ -2783,18 +2791,143 @@
               openError: 'Could not read file.',
             };
 
+        const getArcadeText = () => state.lang === 'ru'
+          ? {
+              title: 'Аркада «Склад шумов»',
+              task: 'Аркада',
+              icon: 'Грот мини-игр',
+              tabs: {
+                nebula: 'Зоопарк Ломанных Небул',
+                pulse: 'Ритм полых пульсов',
+                compost: 'Орбитальный компостер',
+              },
+              labels: {
+                start: 'Старт',
+                stop: 'Пауза',
+                reset: 'Сброс',
+                strike: 'Удар',
+                score: 'Счёт',
+                best: 'Рекорд',
+                time: 'Время',
+                moves: 'Ходы',
+                hearts: 'Жизни',
+                speed: 'Скорость',
+              },
+              nebula: {
+                intro: 'Открывай парные сущности. Пустые ячейки «рассыпают» соседей. Бомбы — провал.',
+                status: (open, total, bombs) => `Раскрыто ${open}/${total - bombs}. Бомб: ${bombs}.`,
+                tip: 'ЛКМ — открыть. ПКМ — пометить как шипящий осколок.',
+                won: 'Менажерия подчинилась — все пары найдены.',
+                lost: 'Вакуум проглотил ячейку. Попробуй ещё.',
+              },
+              pulse: {
+                intro: 'Полоса пульса движется. Бей в центр, когда полоса перекрывает прорезь.',
+                hint: 'Space/Enter или кнопка «Старт/Удар». Чем точнее, тем выше множитель.',
+                combo: (combo) => `Комбо: x${combo}`,
+              },
+              compost: {
+                intro: 'Ловись сигналы, избегай шлака. Стрелки/A D двигают чашу, Пуск — старт.',
+                hint: 'Зелёные дают очки, пурпурные замедляют шторм, красные отнимают жизнь.',
+              },
+            }
+          : {
+              title: 'Arcade “Noise Depot”',
+              task: 'Arcade',
+              icon: 'Odd mini-games',
+              tabs: {
+                nebula: 'Broken Nebula Menagerie',
+                pulse: 'Hollow Pulse Ritual',
+                compost: 'Orbital Composter',
+              },
+              labels: {
+                start: 'Start',
+                stop: 'Pause',
+                reset: 'Reset',
+                strike: 'Strike',
+                score: 'Score',
+                best: 'Best',
+                time: 'Time',
+                moves: 'Moves',
+                hearts: 'Hearts',
+                speed: 'Speed',
+              },
+              nebula: {
+                intro: 'Flip matching entities. Blank tiles “spill” neighbors. Bombs end the run.',
+                status: (open, total, bombs) => `Revealed ${open}/${total - bombs}. Bombs: ${bombs}.`,
+                tip: 'LMB to reveal. RMB to mark a hissing shard.',
+                won: 'Menagerie tamed — every pair aligned.',
+                lost: 'Vacuum swallowed a tile. Try again.',
+              },
+              pulse: {
+                intro: 'A pulse bar sweeps across. Strike when it overlaps the slit.',
+                hint: 'Space/Enter or the “Start/Strike” button. Closer hits boost the multiplier.',
+                combo: (combo) => `Combo: x${combo}`,
+              },
+              compost: {
+                intro: 'Catch signals, dodge slag. Arrows/A D move the bowl, Start to begin.',
+                hint: 'Green feeds score, violet slows the storm, red burns a heart.',
+              },
+            };
+
+        const getTaskMgrText = () => state.lang === 'ru'
+          ? {
+              title: 'Диспетчер задач',
+              task: 'Диспетчер задач',
+              icon: 'Задачи',
+              tabs: { cpu: 'CPU', ram: 'RAM', disk: 'DISK', proc: 'Процессы' },
+              cpuTitle: 'CPU',
+              bpmLabel: (v) => `${v} уд/мин`,
+              ramTitle: 'RAM',
+              diskTitle: 'DISK',
+              locked: 'locked',
+              lockedAlt: 'я не хочу тебя забывать',
+              processesTitle: 'Процессы',
+              end: 'Завершить',
+              running: 'работает',
+              frozen: 'заморожен',
+              blocked: 'заблокирован',
+            }
+          : {
+              title: 'Task Manager',
+              task: 'Task Manager',
+              icon: 'Tasks',
+              tabs: { cpu: 'CPU', ram: 'RAM', disk: 'DISK', proc: 'Processes' },
+              cpuTitle: 'CPU',
+              bpmLabel: (v) => `${v} bpm`,
+              ramTitle: 'RAM',
+              diskTitle: 'DISK',
+              locked: 'locked',
+              lockedAlt: "i don't want to forget you",
+              processesTitle: 'Processes',
+              end: 'End task',
+              running: 'running',
+              frozen: 'frozen',
+              blocked: 'blocked',
+            };
+
         const buildGuiShell = () => {
+          if (state.taskMgr) {
+            try { if (state.taskMgr.cpuTimer) clearTimeout(state.taskMgr.cpuTimer); } catch {}
+            try { if (state.taskMgr.streamTimer) clearTimeout(state.taskMgr.streamTimer); } catch {}
+            state.taskMgr.cpuTimer = null;
+            state.taskMgr.streamTimer = null;
+            state.taskMgr.crashActive = false;
+          }
           if (state.guiShellEl && state.guiShellEl.parentNode) {
             try { state.guiShellEl.remove(); } catch {}
           }
           const ds = ensureDesktopSettings();
           const paintTxt = getPaintText();
           const noteTxt = getNotepadText();
+          const arcadeTxt = getArcadeText();
+          const taskTxt = getTaskMgrText();
           const t = state.lang === 'ru'
             ? {
                 start: 'Пуск',
                 deskTitle: 'Рабочий стол selfOS',
                 settingsWin: 'Параметры selfOS',
+                arcadeWin: arcadeTxt.title,
+                taskmgrWin: taskTxt.title,
                 sysProps: 'Состояние системы',
                 filesWin: 'Проводник selfOS',
                 status: 'Состояние',
@@ -2811,7 +2944,9 @@
                 taskLog: 'Журнал',
                 taskFiles: 'Проводник',
                 taskTerm: 'Командная строка',
+                taskTaskMgr: taskTxt.task,
                 taskSettings: 'Параметры',
+                taskArcade: arcadeTxt.task,
                 taskNotepad: noteTxt.task,
                 taskPaint: paintTxt.task,
                 icons: {
@@ -2820,8 +2955,10 @@
                   logs: 'Логи',
                   files: 'Файлы',
                   net: 'Сеть',
+                  taskmgr: taskTxt.icon,
                   paint: paintTxt.icon,
                   notepad: noteTxt.icon,
+                  arcade: arcadeTxt.icon,
                   settings: 'Параметры',
                 },
                 logs: [
@@ -2833,6 +2970,7 @@
                 ],
                 notes: (s) => [
                   '• Параметры и Командная строка: Пуск → Параметры / Командная строка.',
+                  '• Аркада: Пуск → Аркада («Склад шумов»).',
                   `• Оформление: ${s.wallpaper === 'sunset' ? 'тёплое' : s.wallpaper === 'midnight' ? 'тёмное' : 'мягкое'}.`,
                   '• Вход: fragment (гость).',
                   `• Звук: ${s.muted ? 'отключён' : `громкость ${s.volume}%`}.`,
@@ -2891,6 +3029,8 @@
                 start: 'Start',
                 deskTitle: 'selfOS desktop',
                 settingsWin: 'selfOS Settings',
+                arcadeWin: arcadeTxt.title,
+                taskmgrWin: taskTxt.title,
                 sysProps: 'System status',
                 filesWin: 'selfOS Explorer',
                 status: 'Status',
@@ -2907,7 +3047,9 @@
                 taskLog: 'Log',
                 taskFiles: 'Files',
                 taskTerm: 'Command Prompt',
+                taskTaskMgr: taskTxt.task,
                 taskSettings: 'Settings',
+                taskArcade: arcadeTxt.task,
                 taskNotepad: noteTxt.task,
                 taskPaint: paintTxt.task,
                 icons: {
@@ -2916,8 +3058,10 @@
                   logs: 'Logs',
                   files: 'Files',
                   net: 'Network',
+                  taskmgr: taskTxt.icon,
                   paint: paintTxt.icon,
                   notepad: noteTxt.icon,
+                  arcade: arcadeTxt.icon,
                   settings: 'Settings',
                 },
                 logs: [
@@ -2929,6 +3073,7 @@
                 ],
                 notes: (s) => [
                   '• Settings & Command Prompt: Start → Settings / Command Prompt.',
+                  '• Arcade: Start → Arcade (“Noise Depot”).',
                   `• Palette: ${s.wallpaper === 'sunset' ? 'warm' : s.wallpaper === 'midnight' ? 'dark' : 'soft'}.`,
                   '• Login: fragment (guest).',
                   `• Audio: ${s.muted ? 'muted' : `volume ${s.volume}%`}.`,
@@ -3035,9 +3180,17 @@
                   <div class="icon-img notepad"></div>
                   <div class="icon-label">${escapeHtml(noteTxt.icon)}</div>
                 </div>
+                <div class="desktop-icon" data-app="arcade">
+                  <div class="icon-img arcade"></div>
+                  <div class="icon-label">${escapeHtml(arcadeTxt.icon)}</div>
+                </div>
                 <div class="desktop-icon" data-app="net">
                   <div class="icon-img net"></div>
                   <div class="icon-label">${escapeHtml(t.icons.net)}</div>
+                </div>
+                <div class="desktop-icon" data-app="taskmgr">
+                  <div class="icon-img taskmgr"></div>
+                  <div class="icon-label">${escapeHtml(taskTxt.task)}</div>
                 </div>
                 <div class="desktop-icon" data-app="settings">
                   <div class="icon-img settings"></div>
@@ -3071,6 +3224,83 @@
                 </div>
                 <div class="window-body note-body">
                   ${notes}
+                </div>
+              </div>
+              <div class="win98-window taskmgr" data-app="taskmgr" data-min-width="520" data-min-height="360">
+                <div class="titlebar">
+                  <span class="title">${escapeHtml(t.taskmgrWin)}</span>
+                  <div class="title-buttons"><span data-btn="min">_</span><span data-btn="max">□</span><span data-btn="close">×</span></div>
+                </div>
+                <div class="window-body taskmgr-body">
+                  <div class="task-tabs">
+                    <button class="task-tab active" data-tab="cpu">${escapeHtml(taskTxt.tabs.cpu)}</button>
+                    <button class="task-tab" data-tab="ram">${escapeHtml(taskTxt.tabs.ram)}</button>
+                    <button class="task-tab" data-tab="disk">${escapeHtml(taskTxt.tabs.disk)}</button>
+                    <button class="task-tab" data-tab="proc">${escapeHtml(taskTxt.tabs.proc)}</button>
+                  </div>
+                  <div class="task-panel active" data-tab="cpu">
+                    <div class="task-panel-head">
+                      <div class="task-panel-title">${escapeHtml(taskTxt.cpuTitle)}</div>
+                      <div class="task-panel-meta" data-task="cpu-bpm">—</div>
+                    </div>
+                    <div class="task-chart">
+                      <div class="task-chart-bars"></div>
+                    </div>
+                  </div>
+                  <div class="task-panel" data-tab="ram">
+                    <div class="task-panel-head">
+                      <div class="task-panel-title">${escapeHtml(taskTxt.ramTitle)}</div>
+                    </div>
+                    <div class="task-chart ram">
+                      <div class="task-chart-bars ram"></div>
+                    </div>
+                    <div class="task-ram">
+                      <div class="task-ram-value" data-task="ram-value">—</div>
+                    </div>
+                  </div>
+                  <div class="task-panel" data-tab="disk">
+                    <div class="task-panel-head">
+                      <div class="task-panel-title">${escapeHtml(taskTxt.diskTitle)}</div>
+                    </div>
+                    <div class="task-chart disk frozen">
+                      <div class="task-chart-bars disk"></div>
+                    </div>
+                    <div class="task-disk">
+                      <div class="task-disk-status" data-task="disk-status">${escapeHtml(taskTxt.locked)}</div>
+                    </div>
+                  </div>
+                  <div class="task-panel" data-tab="proc">
+                    <div class="task-panel-head">
+                      <div class="task-panel-title">${escapeHtml(taskTxt.processesTitle)}</div>
+                    </div>
+                    <div class="task-proc-list">
+                      <div class="task-proc-row head">
+                        <span>${escapeHtml(taskTxt.tabs.proc)}</span>
+                        <span>${escapeHtml(t.status)}</span>
+                        <span>${escapeHtml(taskTxt.end)}</span>
+                      </div>
+                      <div class="task-proc-row" data-proc="heartbeat">
+                        <span class="name">heartbeat.sys</span>
+                        <span class="state" data-task="heart-state">${escapeHtml(taskTxt.running)}</span>
+                        <button class="task-kill" data-task="kill-heart">${escapeHtml(taskTxt.end)}</button>
+                      </div>
+                      <div class="task-proc-row disabled">
+                        <span class="name">ghost-idle.exe</span>
+                        <span class="state">${escapeHtml(taskTxt.frozen)}</span>
+                        <button class="task-kill" disabled>${escapeHtml(taskTxt.end)}</button>
+                      </div>
+                      <div class="task-proc-row disabled">
+                        <span class="name">memwatcher.dll</span>
+                        <span class="state">${escapeHtml(taskTxt.blocked)}</span>
+                        <button class="task-kill" disabled>${escapeHtml(taskTxt.end)}</button>
+                      </div>
+                      <div class="task-proc-row disabled">
+                        <span class="name">echo-chamber</span>
+                        <span class="state">${escapeHtml(taskTxt.running)}</span>
+                        <button class="task-kill" disabled>${escapeHtml(taskTxt.end)}</button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div class="win98-window files" data-app="files">
@@ -3186,6 +3416,79 @@
                   <div class="pad-status"></div>
                 </div>
               </div>
+              <div class="win98-window arcade" data-app="arcade" data-min-width="720" data-min-height="520">
+                <div class="titlebar">
+                  <span class="title">${escapeHtml(t.arcadeWin)}</span>
+                  <div class="title-buttons"><span data-btn="min">_</span><span data-btn="max">□</span><span data-btn="close">×</span></div>
+                </div>
+                <div class="window-body arcade-body">
+                  <div class="arcade-tabs">
+                    <button class="arcade-tab active" data-game="nebula">${escapeHtml(arcadeTxt.tabs.nebula)}</button>
+                    <button class="arcade-tab" data-game="pulse">${escapeHtml(arcadeTxt.tabs.pulse)}</button>
+                    <button class="arcade-tab" data-game="compost">${escapeHtml(arcadeTxt.tabs.compost)}</button>
+                  </div>
+                  <div class="arcade-panel active" data-game="nebula">
+                    <div class="arcade-top">
+                      <div class="arcade-desc">${escapeHtml(arcadeTxt.nebula.intro)}</div>
+                      <div class="arcade-tip">${escapeHtml(arcadeTxt.nebula.tip)}</div>
+                      <div class="arcade-actions">
+                        <button class="arcade-btn primary" data-arcade="start-nebula">${escapeHtml(arcadeTxt.labels.start)}</button>
+                        <button class="arcade-btn ghost" data-arcade="reset-nebula">${escapeHtml(arcadeTxt.labels.reset)}</button>
+                      </div>
+                    </div>
+                    <div class="arcade-stats">
+                      <span data-arcade="nebula-best">${escapeHtml(arcadeTxt.labels.best)} —</span>
+                      <span data-arcade="nebula-timer">${escapeHtml(arcadeTxt.labels.time)}: 00:00</span>
+                      <span data-arcade="nebula-moves">${escapeHtml(arcadeTxt.labels.moves)}: 0</span>
+                    </div>
+                    <div class="nebula-grid"></div>
+                    <div class="arcade-status" data-arcade="nebula-status">${escapeHtml(arcadeTxt.nebula.status(0, 0, 0))}</div>
+                  </div>
+                  <div class="arcade-panel" data-game="pulse">
+                    <div class="arcade-top">
+                      <div class="arcade-desc">${escapeHtml(arcadeTxt.pulse.intro)}</div>
+                      <div class="arcade-tip">${escapeHtml(arcadeTxt.pulse.hint)}</div>
+                      <div class="arcade-actions">
+                        <button class="arcade-btn primary" data-arcade="toggle-pulse">${escapeHtml(arcadeTxt.labels.start)}</button>
+                        <button class="arcade-btn" data-arcade="strike-pulse">${escapeHtml(arcadeTxt.labels.strike)}</button>
+                        <button class="arcade-btn ghost" data-arcade="reset-pulse">${escapeHtml(arcadeTxt.labels.reset)}</button>
+                      </div>
+                    </div>
+                    <div class="arcade-stats">
+                      <span data-arcade="pulse-score">${escapeHtml(arcadeTxt.labels.score)}: 0</span>
+                      <span data-arcade="pulse-best">${escapeHtml(arcadeTxt.labels.best)}: 0</span>
+                      <span data-arcade="pulse-combo">${escapeHtml(arcadeTxt.pulse.combo ? arcadeTxt.pulse.combo(1) : 'Combo: x1')}</span>
+                      <span data-arcade="pulse-hearts">${escapeHtml(arcadeTxt.labels.hearts)}: 3</span>
+                    </div>
+                    <div class="pulse-track">
+                      <div class="pulse-zone"></div>
+                      <div class="pulse-bar"></div>
+                    </div>
+                    <div class="arcade-status" data-arcade="pulse-status">${escapeHtml(arcadeTxt.pulse.hint)}</div>
+                  </div>
+                  <div class="arcade-panel" data-game="compost">
+                    <div class="arcade-top">
+                      <div class="arcade-desc">${escapeHtml(arcadeTxt.compost.intro)}</div>
+                      <div class="arcade-tip">${escapeHtml(arcadeTxt.compost.hint)}</div>
+                      <div class="arcade-actions">
+                        <button class="arcade-btn primary" data-arcade="start-compost">${escapeHtml(arcadeTxt.labels.start)}</button>
+                        <button class="arcade-btn" data-arcade="stop-compost">${escapeHtml(arcadeTxt.labels.stop)}</button>
+                        <button class="arcade-btn ghost" data-arcade="reset-compost">${escapeHtml(arcadeTxt.labels.reset)}</button>
+                      </div>
+                    </div>
+                    <div class="arcade-stats">
+                      <span data-arcade="compost-score">${escapeHtml(arcadeTxt.labels.score)}: 0</span>
+                      <span data-arcade="compost-best">${escapeHtml(arcadeTxt.labels.best)}: 0</span>
+                      <span data-arcade="compost-hearts">${escapeHtml(arcadeTxt.labels.hearts)}: 3</span>
+                      <span data-arcade="compost-speed">${escapeHtml(arcadeTxt.labels.speed)}: 1.0x</span>
+                    </div>
+                    <div class="compost-canvas-wrap">
+                      <canvas class="compost-canvas" width="640" height="260"></canvas>
+                    </div>
+                    <div class="arcade-status" data-arcade="compost-status">${escapeHtml(arcadeTxt.compost.hint)}</div>
+                  </div>
+                </div>
+              </div>
               <div class="win98-window settings" data-app="settings" data-min-width="560" data-min-height="420">
                 <div class="titlebar">
                   <span class="title">${escapeHtml(t.settingsWin)}</span>
@@ -3290,7 +3593,9 @@
                 <div class="start-item" data-app="files">${escapeHtml(t.taskFiles)}</div>
                 <div class="start-item" data-app="notepad">${escapeHtml(noteTxt.task)}</div>
                 <div class="start-item" data-app="paint">${escapeHtml(paintTxt.task)}</div>
+                <div class="start-item" data-app="arcade">${escapeHtml(arcadeTxt.task)}</div>
                 <div class="start-item" data-app="settings">${escapeHtml(t.taskSettings)}</div>
+                <div class="start-item" data-app="taskmgr">${escapeHtml(taskTxt.task)}</div>
                 <div class="start-item" data-app="log">${escapeHtml(t.taskLog)}</div>
                 <div class="start-item" data-app="note">${escapeHtml(t.noteWin)}</div>
                 <div class="start-item" data-app="sys">${escapeHtml(t.sysProps)}</div>
@@ -3301,6 +3606,8 @@
                 <div class="task-btn" data-app="files">${escapeHtml(t.taskFiles)}</div>
                 <div class="task-btn" data-app="notepad">${escapeHtml(noteTxt.task)}</div>
                 <div class="task-btn" data-app="paint">${escapeHtml(paintTxt.task)}</div>
+                <div class="task-btn" data-app="arcade">${escapeHtml(arcadeTxt.task)}</div>
+                <div class="task-btn" data-app="taskmgr">${escapeHtml(taskTxt.task)}</div>
                 <div class="task-btn" data-app="settings">${escapeHtml(t.taskSettings)}</div>
                 <div class="task-btn" data-app="terminal">${escapeHtml(t.taskTerm)}</div>
               </div>
@@ -3317,8 +3624,10 @@
           initWindowControls(shell);
           initDesktopIcons(shell);
           initFileManager(shell);
+          initTaskManager(shell);
           initPaint(shell);
           initNotepad(shell);
+          initArcade(shell);
           initSettings(shell);
           applyDesktopSettings(shell);
         };
@@ -3349,6 +3658,8 @@
             paint: { w: 520, h: 360 },
             notepad: { w: 440, h: 360 },
             settings: { w: 560, h: 420 },
+            taskmgr: { w: 520, h: 360 },
+            arcade: { w: 720, h: 480 },
           };
           const getMinSize = (win) => {
             const app = win.getAttribute('data-app');
@@ -3903,6 +4214,172 @@
           renderAll();
         };
 
+        const initTaskManager = (shell) => {
+          const win = shell.querySelector('.win98-window.taskmgr');
+          if (!win) return;
+          const taskTxt = getTaskMgrText();
+          state.taskMgr = state.taskMgr || { cpuTimer: null, streamTimer: null, crashActive: false };
+          if (state.taskMgr.cpuTimer) { clearTimeout(state.taskMgr.cpuTimer); state.taskMgr.cpuTimer = null; }
+          if (state.taskMgr.streamTimer) { clearTimeout(state.taskMgr.streamTimer); state.taskMgr.streamTimer = null; }
+          if (win.dataset.init === '1') return;
+          win.dataset.init = '1';
+
+          const tabs = Array.from(win.querySelectorAll('.task-tab'));
+          const panels = Array.from(win.querySelectorAll('.task-panel'));
+          const barsWrap = win.querySelector('.task-chart-bars');
+          const bpmEl = win.querySelector('[data-task="cpu-bpm"]');
+          const ramEl = win.querySelector('[data-task="ram-value"]');
+          const diskEl = win.querySelector('[data-task="disk-status"]');
+          const killBtn = win.querySelector('[data-task="kill-heart"]');
+          const heartState = win.querySelector('[data-task="heart-state"]');
+
+          const setTab = (id) => {
+            tabs.forEach((t) => t.classList.toggle('active', t.getAttribute('data-tab') === id));
+            panels.forEach((p) => p.classList.toggle('active', p.getAttribute('data-tab') === id));
+            if (id === 'ram') refreshRam();
+            if (id === 'disk') refreshDisk();
+            if (id === 'cpu') updateBpm();
+          };
+          tabs.forEach((tab) => {
+            tab.addEventListener('click', () => {
+              const id = tab.getAttribute('data-tab');
+              if (id) setTab(id);
+            });
+          });
+
+          const bars = [];
+          const barCount = 42;
+          if (barsWrap) {
+            barsWrap.innerHTML = '';
+            for (let i = 0; i < barCount; i++) {
+              const bar = document.createElement('div');
+              bar.className = 'task-bar';
+              bar.style.height = '2%';
+              barsWrap.appendChild(bar);
+              bars.push(bar);
+            }
+          }
+
+          let cpuData = new Array(barCount).fill(0);
+          let beatIdx = 0;
+          let tempo = 1.0;
+
+          const renderBars = () => {
+            bars.forEach((bar, idx) => {
+              const v = cpuData[idx] || 0;
+              bar.style.height = `${Math.max(0, Math.min(100, v))}%`;
+            });
+          };
+          const updateBpm = () => {
+            if (!bpmEl) return;
+            const bpm = Math.max(44, Math.min(180, Math.round(78 / tempo + random(-3, 6))));
+            bpmEl.textContent = taskTxt.bpmLabel ? taskTxt.bpmLabel(bpm) : `${bpm} bpm`;
+          };
+          const pumpCpu = () => {
+            if (state.taskMgr.crashActive) return;
+            const pattern = [0, 22, 47, 22, 0, 14, 34, 14, 0];
+            const base = pattern[beatIdx % pattern.length];
+            const wobble = random(-3, 7);
+            const spike = Math.random() < 0.08 ? random(10, 22) : 0;
+            const val = Math.max(0, Math.min(100, base + wobble + spike));
+            cpuData = [...cpuData.slice(1), val];
+            renderBars();
+            updateBpm();
+            beatIdx += 1;
+            if (Math.random() < 0.22) tempo = 0.82 + Math.random() * 0.58;
+            const busy = base > 0;
+            const delay = Math.max(70, Math.round((busy ? random(110, 160) : random(180, 280)) * tempo));
+            state.taskMgr.cpuTimer = setTimeout(pumpCpu, delay);
+          };
+
+          const ramPoolStatic = ['124MB', '6.3GB', '98%', '∞', 'NaN', 'ищу память', 'опять забыл', 'ты кто?', '...'];
+          const randomRam = () => {
+            const dynamic = [
+              `${random(12, 32768)}MB`,
+              `${(Math.random() * 15 + 0.1).toFixed(1)}GB`,
+              `${random(0, 100)}%`,
+              `0x${random(0, 65535).toString(16)}`,
+            ];
+            const pool = [...ramPoolStatic, ...dynamic];
+            return pool[random(0, pool.length - 1)];
+          };
+          const refreshRam = () => {
+            if (ramEl) ramEl.textContent = randomRam();
+          };
+          const refreshDisk = () => {
+            if (diskEl) diskEl.textContent = Math.random() < 0.001 ? taskTxt.lockedAlt : taskTxt.locked;
+          };
+
+          const spawnCrashOverlay = () => {
+            const overlay = document.createElement('div');
+            overlay.className = 'task-crash-overlay';
+            overlay.innerHTML = `
+              <div class="crash-scan"></div>
+              <div class="crash-title">SYSTEM HALT</div>
+              <div class="crash-stream"></div>
+            `;
+            document.body.appendChild(overlay);
+            setTimeout(() => overlay.classList.add('visible'), 30);
+            const stream = overlay.querySelector('.crash-stream');
+            const linesRU = [
+              'CRITICAL: heartbeat.sys остановлен',
+              'SEGFAULT: память рвётся',
+              'panic: kernel потерял пульс',
+              'stack overflow в процессе', '!!!', 'память? нет памяти.',
+              'поток 3: просит пощады', 'утечка утечки утечки', 'слишком поздно',
+              'ошибка: избыточное эхо', 'ошибка: не могу забыть тебя',
+            ];
+            const linesEN = [
+              'CRITICAL: heartbeat.sys terminated',
+              'SEGFAULT: memory frayed',
+              'panic: kernel lost its pulse',
+              'stack overflow in process', '!!!', 'memory? no memory.',
+              'thread 3: screaming', 'leak leak leak', 'too late',
+              'error: redundant echo', "error: i don't want to forget you",
+            ];
+            const lines = state.lang === 'ru' ? linesRU : linesEN;
+            const pump = () => {
+              if (!overlay.parentNode) return;
+              const row = document.createElement('div');
+              const msg = lines[random(0, lines.length - 1)];
+              const code = `0x${random(1111, 65535).toString(16)}`;
+              row.textContent = `${msg} :: ${code}`;
+              stream.appendChild(row);
+              stream.scrollTop = stream.scrollHeight;
+              state.taskMgr.streamTimer = setTimeout(pump, random(40, 140));
+            };
+            pump();
+          };
+
+          const crash = () => {
+            if (state.taskMgr.crashActive) return;
+            state.taskMgr.crashActive = true;
+            if (state.taskMgr.cpuTimer) { clearTimeout(state.taskMgr.cpuTimer); state.taskMgr.cpuTimer = null; }
+            if (heartState) heartState.textContent = taskTxt.frozen;
+            if (killBtn) killBtn.disabled = true;
+            if (barsWrap) barsWrap.classList.add('panic');
+            document.body.classList.add('taskmgr-crash');
+            try { inputEl.disabled = true; inputEl.blur(); } catch {}
+            try { effects.meltdown(8000); } catch {}
+            try { audio.scream(2.4); } catch {}
+            spawnCrashOverlay();
+          };
+
+          if (killBtn) {
+            killBtn.addEventListener('click', (ev) => {
+              ev.preventDefault();
+              crash();
+            });
+          }
+
+          setTab('cpu');
+          refreshRam();
+          refreshDisk();
+          renderBars();
+          updateBpm();
+          pumpCpu();
+        };
+
         const initPaint = (shell) => {
           const win = shell.querySelector('.win98-window.paint');
           if (!win) return;
@@ -4225,6 +4702,593 @@
 
           newFile();
           updateStatus();
+        };
+
+        const initArcade = (shell) => {
+          const win = shell.querySelector('.win98-window.arcade');
+          if (!win) return;
+          if (win.dataset.init === '1') return;
+          win.dataset.init = '1';
+          const t = getArcadeText();
+          state.arcade = state.arcade || { nebula: {}, pulse: {}, compost: {} };
+          if (state.arcadeKeyHandler) { try { window.removeEventListener('keydown', state.arcadeKeyHandler); } catch {} }
+          if (state.arcadeResizeHandler) { try { window.removeEventListener('resize', state.arcadeResizeHandler); } catch {} }
+
+          const tabs = Array.from(win.querySelectorAll('.arcade-tab'));
+          const panels = Array.from(win.querySelectorAll('.arcade-panel'));
+          const setTab = (id) => {
+            tabs.forEach((tab) => tab.classList.toggle('active', tab.getAttribute('data-game') === id));
+            panels.forEach((panel) => panel.classList.toggle('active', panel.getAttribute('data-game') === id));
+            if (id !== 'nebula') pauseNebulaTimer();
+            if (id !== 'pulse') stopPulse();
+            if (id !== 'compost') stopCompost();
+            if (id === 'nebula' && nebulaStartTime && !nebulaDone && !nebulaTimerId) {
+              nebulaTimerId = setInterval(updateNebulaTimer, 500);
+            }
+          };
+          tabs.forEach((tab) => {
+            tab.addEventListener('click', () => {
+              const id = tab.getAttribute('data-game');
+              if (id) setTab(id);
+            });
+          });
+
+          const formatTime = (ms) => {
+            const total = Math.max(0, Math.floor(ms / 1000));
+            const m = String(Math.floor(total / 60)).padStart(2, '0');
+            const s = String(total % 60).padStart(2, '0');
+            return `${m}:${s}`;
+          };
+
+          // --- Nebula Menagerie (memory + cascade) ---
+          const nebulaGrid = win.querySelector('.nebula-grid');
+          const nebulaStatus = win.querySelector('[data-arcade="nebula-status"]');
+          const nebulaBest = win.querySelector('[data-arcade="nebula-best"]');
+          const nebulaTimer = win.querySelector('[data-arcade="nebula-timer"]');
+          const nebulaMoves = win.querySelector('[data-arcade="nebula-moves"]');
+          const btnNebulaStart = win.querySelector('[data-arcade="start-nebula"]');
+          const btnNebulaReset = win.querySelector('[data-arcade="reset-nebula"]');
+
+          const nebulaSize = 4;
+          const nebulaBombs = 4;
+          let nebulaBoard = [];
+          let nebulaBuffer = [];
+          let nebulaMoveCount = 0;
+          let nebulaStartTime = null;
+          let nebulaTimerId = null;
+          let nebulaDone = false;
+
+          const updateNebulaTimer = () => {
+            if (!nebulaTimer) return;
+            if (!nebulaStartTime) { nebulaTimer.textContent = `${t.labels.time}: 00:00`; return; }
+            const elapsed = performance.now() - nebulaStartTime;
+            nebulaTimer.textContent = `${t.labels.time}: ${formatTime(elapsed)}`;
+          };
+
+          const pauseNebulaTimer = () => {
+            if (nebulaTimerId) clearInterval(nebulaTimerId);
+            nebulaTimerId = null;
+          };
+
+          const showNebulaBest = () => {
+            const best = state.arcade.nebula || {};
+            const timeText = best.bestTime ? formatTime(best.bestTime) : '—';
+            const moveText = best.bestMoves ? best.bestMoves : '—';
+            if (nebulaBest) nebulaBest.textContent = `${t.labels.best}: ${timeText} / ${t.labels.moves.toLowerCase()}: ${moveText}`;
+          };
+
+          const buildNebulaBoard = () => {
+            const total = nebulaSize * nebulaSize;
+            const pairCount = Math.floor((total - nebulaBombs) / 2);
+            const pool = ['<>', '::', '{}', '()','//','**','++','==','..','[]','--'];
+            const pick = pool.sort(() => Math.random() - 0.5).slice(0, pairCount);
+            const pairs = pick.flatMap((sym) => ([{ symbol: sym, bomb: false, spill: false }, { symbol: sym, bomb: false, spill: false }]));
+            const bombs = Array.from({ length: nebulaBombs }).map(() => ({ symbol: '!!', bomb: true, spill: false }));
+            const board = [...pairs, ...bombs];
+            for (let i = board.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [board[i], board[j]] = [board[j], board[i]];
+            }
+            const safeIndexes = board
+              .map((c, idx) => ({ c, idx }))
+              .filter((x) => !x.c.bomb)
+              .sort(() => Math.random() - 0.5)
+              .slice(0, 2);
+            safeIndexes.forEach((x) => { board[x.idx].spill = true; board[x.idx].symbol = '..'; });
+            return board.map((cell, idx) => ({
+              ...cell,
+              id: idx,
+              revealed: false,
+              matched: false,
+              marked: false,
+            }));
+          };
+
+          const nebulaSafeCount = () => nebulaBoard.filter((c) => !c.bomb).length;
+          const nebulaRevealedSafe = () => nebulaBoard.filter((c) => !c.bomb && c.revealed).length;
+
+          const updateNebulaStatus = (msg) => {
+            if (!nebulaStatus) return;
+            if (msg) { nebulaStatus.textContent = msg; return; }
+            nebulaStatus.textContent = t.nebula.status(nebulaRevealedSafe(), nebulaBoard.length, nebulaBombs);
+          };
+
+          const drawNebula = () => {
+            if (!nebulaGrid) return;
+            nebulaGrid.innerHTML = '';
+            nebulaBoard.forEach((cell, idx) => {
+              const btn = document.createElement('button');
+              btn.className = 'nebula-cell';
+              if (cell.revealed) btn.classList.add('revealed');
+              if (cell.marked) btn.classList.add('marked');
+              if (cell.bomb && cell.revealed) btn.classList.add('bomb');
+              if (cell.spill && cell.revealed) btn.classList.add('spill');
+              btn.dataset.idx = idx;
+              btn.textContent = cell.revealed ? cell.symbol : (cell.marked ? '!' : '?');
+              btn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                revealNebula(idx);
+              });
+              btn.addEventListener('contextmenu', (ev) => {
+                ev.preventDefault();
+                toggleNebulaMark(idx);
+              });
+              nebulaGrid.appendChild(btn);
+            });
+            const sizeVar = `repeat(${nebulaSize}, 1fr)`;
+            nebulaGrid.style.gridTemplateColumns = sizeVar;
+            nebulaGrid.style.gridTemplateRows = sizeVar;
+          };
+
+          const finishNebula = (won) => {
+            nebulaDone = true;
+            pauseNebulaTimer();
+            const elapsed = nebulaStartTime ? performance.now() - nebulaStartTime : null;
+            if (won && elapsed) {
+              const best = state.arcade.nebula || {};
+              if (!best.bestTime || elapsed < best.bestTime) best.bestTime = elapsed;
+              if (!best.bestMoves || nebulaMoveCount < best.bestMoves) best.bestMoves = nebulaMoveCount;
+              state.arcade.nebula = best;
+              showNebulaBest();
+            }
+          };
+
+          const checkNebulaWin = () => {
+            if (nebulaRevealedSafe() >= nebulaSafeCount()) {
+              finishNebula(true);
+              updateNebulaStatus(t.nebula.won);
+            }
+          };
+
+          const revealNeighbors = (idx) => {
+            const row = Math.floor(idx / nebulaSize);
+            const col = idx % nebulaSize;
+            const deltas = [-1, 0, 1];
+            deltas.forEach((dy) => {
+              deltas.forEach((dx) => {
+                if (dx === 0 && dy === 0) return;
+                const r = row + dy;
+                const c = col + dx;
+                if (r < 0 || c < 0 || r >= nebulaSize || c >= nebulaSize) return;
+                const nIdx = r * nebulaSize + c;
+                const cell = nebulaBoard[nIdx];
+                if (!cell || cell.bomb || cell.revealed || cell.marked) return;
+                cell.revealed = true;
+                if (cell.spill) {
+                  revealNeighbors(nIdx);
+                } else {
+                  cell.matched = true;
+                }
+              });
+            });
+          };
+
+          const revealNebula = (idx) => {
+            const cell = nebulaBoard[idx];
+            if (!cell || cell.revealed || cell.marked || nebulaDone) return;
+            nebulaMoveCount += 1;
+            if (!nebulaStartTime) {
+              nebulaStartTime = performance.now();
+              nebulaTimerId = setInterval(updateNebulaTimer, 500);
+            }
+            cell.revealed = true;
+            if (cell.bomb) {
+              finishNebula(false);
+              updateNebulaStatus(t.nebula.lost);
+              drawNebula();
+              return;
+            }
+            if (cell.spill) {
+              revealNeighbors(idx);
+            } else {
+              nebulaBuffer.push(cell);
+            }
+            drawNebula();
+            if (nebulaBuffer.length === 2) {
+              const [a, b] = nebulaBuffer;
+              if (a.symbol === b.symbol) {
+                a.matched = true; b.matched = true;
+                nebulaBuffer = [];
+              } else {
+                setTimeout(() => {
+                  a.revealed = false;
+                  b.revealed = false;
+                  nebulaBuffer = [];
+                  drawNebula();
+                  updateNebulaStatus();
+                }, 520);
+              }
+            }
+            if (nebulaMoves) nebulaMoves.textContent = `${t.labels.moves}: ${nebulaMoveCount}`;
+            checkNebulaWin();
+            updateNebulaStatus();
+          };
+
+          const toggleNebulaMark = (idx) => {
+            const cell = nebulaBoard[idx];
+            if (!cell || cell.revealed || nebulaDone) return;
+            cell.marked = !cell.marked;
+            drawNebula();
+          };
+
+          const resetNebula = () => {
+            nebulaBoard = buildNebulaBoard();
+            nebulaBuffer = [];
+            nebulaMoveCount = 0;
+            nebulaStartTime = null;
+            nebulaDone = false;
+            if (nebulaMoves) nebulaMoves.textContent = `${t.labels.moves}: 0`;
+            pauseNebulaTimer();
+            updateNebulaTimer();
+            updateNebulaStatus();
+            drawNebula();
+          };
+
+          if (btnNebulaStart) btnNebulaStart.addEventListener('click', resetNebula);
+          if (btnNebulaReset) btnNebulaReset.addEventListener('click', resetNebula);
+
+          // --- Pulse Ritual (rhythm) ---
+          const pulseBar = win.querySelector('.pulse-bar');
+          const pulseZone = win.querySelector('.pulse-zone');
+          const pulseStatus = win.querySelector('[data-arcade="pulse-status"]');
+          const pulseScoreEl = win.querySelector('[data-arcade="pulse-score"]');
+          const pulseBestEl = win.querySelector('[data-arcade="pulse-best"]');
+          const pulseComboEl = win.querySelector('[data-arcade="pulse-combo"]');
+          const pulseHeartsEl = win.querySelector('[data-arcade="pulse-hearts"]');
+          const btnPulseToggle = win.querySelector('[data-arcade="toggle-pulse"]');
+          const btnPulseStrike = win.querySelector('[data-arcade="strike-pulse"]');
+          const btnPulseReset = win.querySelector('[data-arcade="reset-pulse"]');
+
+          let pulseRunning = false;
+          let pulsePos = 0;
+          let pulseSpeed = 0.38;
+          let pulseZoneStart = 0.42;
+          let pulseZoneWidth = 0.16;
+          let pulseScore = 0;
+          let pulseCombo = 1;
+          let pulseHearts = 3;
+          let pulseLast = null;
+          let pulseFrame = null;
+
+          const updatePulseUI = () => {
+            if (pulseBar) pulseBar.style.left = `${Math.min(99, Math.max(0, pulsePos * 100))}%`;
+            if (pulseZone) {
+              pulseZone.style.left = `${pulseZoneStart * 100}%`;
+              pulseZone.style.width = `${pulseZoneWidth * 100}%`;
+            }
+            if (pulseScoreEl) pulseScoreEl.textContent = `${t.labels.score}: ${pulseScore}`;
+            if (pulseBestEl) {
+              const best = state.arcade.pulse || {};
+              const comboLabel = best.bestCombo ? ` · x${best.bestCombo}` : '';
+              pulseBestEl.textContent = `${t.labels.best}: ${best.bestScore || 0}${comboLabel}`;
+            }
+            if (pulseComboEl) pulseComboEl.textContent = t.pulse.combo ? t.pulse.combo(pulseCombo) : `Combo: x${pulseCombo}`;
+            if (pulseHeartsEl) pulseHeartsEl.textContent = `${t.labels.hearts}: ${pulseHearts}`;
+            if (btnPulseToggle) btnPulseToggle.textContent = pulseRunning ? t.labels.stop : t.labels.start;
+          };
+
+          const setPulseZone = () => {
+            pulseZoneStart = 0.18 + Math.random() * 0.6;
+            pulseZoneWidth = 0.12 + Math.random() * 0.08;
+          };
+
+          const pulseStrike = () => {
+            if (!pulseRunning) startPulse();
+            const center = pulseZoneStart + pulseZoneWidth / 2;
+            const window = pulseZoneWidth / 2;
+            const dist = Math.abs(pulsePos - center);
+            if (dist <= window) {
+              const accuracy = Math.max(0.05, 1 - dist / window);
+              const gain = Math.round(40 + accuracy * 160 * pulseCombo);
+              pulseScore += gain;
+              pulseCombo = Math.min(12, pulseCombo + 1);
+              pulseSpeed = Math.min(0.9, pulseSpeed + 0.01);
+              if (!state.arcade.pulse.bestScore || pulseScore > state.arcade.pulse.bestScore) {
+                state.arcade.pulse.bestScore = pulseScore;
+              }
+              if (!state.arcade.pulse.bestCombo || pulseCombo > state.arcade.pulse.bestCombo) {
+                state.arcade.pulse.bestCombo = pulseCombo;
+              }
+              updatePulseUI();
+              if (pulseStatus) pulseStatus.textContent = t.pulse.combo ? t.pulse.combo(pulseCombo) : `Combo: x${pulseCombo}`;
+            } else {
+              pulseHearts -= 1;
+              pulseCombo = 1;
+              if (pulseStatus) pulseStatus.textContent = t.pulse.hint;
+              if (pulseHearts <= 0) {
+                stopPulse();
+                if (pulseStatus) pulseStatus.textContent = state.lang === 'ru' ? 'ритуал оборвался.' : 'ritual snapped.';
+              }
+            }
+            updatePulseUI();
+          };
+
+          const tickPulse = (ts) => {
+            if (!pulseRunning) return;
+            if (pulseLast === null) pulseLast = ts;
+            const dt = (ts - pulseLast) / 1000;
+            pulseLast = ts;
+            pulsePos += dt * pulseSpeed;
+            if (pulsePos >= 1) {
+              pulsePos %= 1;
+              setPulseZone();
+            }
+            updatePulseUI();
+            pulseFrame = requestAnimationFrame(tickPulse);
+          };
+
+          const startPulse = () => {
+            if (pulseRunning) return;
+            pulseRunning = true;
+            pulseLast = null;
+            updatePulseUI();
+            pulseFrame = requestAnimationFrame(tickPulse);
+          };
+
+          const stopPulse = () => {
+            pulseRunning = false;
+            if (pulseFrame) cancelAnimationFrame(pulseFrame);
+            pulseFrame = null;
+            pulseLast = null;
+            updatePulseUI();
+          };
+
+          const resetPulse = () => {
+            pulseScore = 0;
+            pulseCombo = 1;
+            pulseHearts = 3;
+            pulsePos = 0;
+            pulseSpeed = 0.38;
+            setPulseZone();
+            stopPulse();
+            updatePulseUI();
+            if (pulseStatus) pulseStatus.textContent = t.pulse.hint;
+          };
+
+          if (btnPulseToggle) btnPulseToggle.addEventListener('click', () => {
+            if (pulseRunning) stopPulse(); else startPulse();
+          });
+          if (btnPulseStrike) btnPulseStrike.addEventListener('click', pulseStrike);
+          if (btnPulseReset) btnPulseReset.addEventListener('click', resetPulse);
+
+          // --- Orbital Composter (catch) ---
+          const compostCanvas = win.querySelector('.compost-canvas');
+          const compostStatus = win.querySelector('[data-arcade="compost-status"]');
+          const compostScoreEl = win.querySelector('[data-arcade="compost-score"]');
+          const compostBestEl = win.querySelector('[data-arcade="compost-best"]');
+          const compostHeartsEl = win.querySelector('[data-arcade="compost-hearts"]');
+          const compostSpeedEl = win.querySelector('[data-arcade="compost-speed"]');
+          const btnCompostStart = win.querySelector('[data-arcade="start-compost"]');
+          const btnCompostStop = win.querySelector('[data-arcade="stop-compost"]');
+          const btnCompostReset = win.querySelector('[data-arcade="reset-compost"]');
+
+          const ctx = compostCanvas ? compostCanvas.getContext('2d') : null;
+          const compostState = {
+            running: false,
+            score: 0,
+            hearts: 3,
+            tempo: 1,
+            width: compostCanvas ? compostCanvas.width : 640,
+            height: compostCanvas ? compostCanvas.height : 260,
+            playerX: 0.5,
+            objects: [],
+            last: null,
+            raf: null,
+            spawnTimer: null,
+            slowUntil: 0,
+            wave: 0,
+          };
+
+          const resizeCompost = () => {
+            if (!compostCanvas) return;
+            const rect = compostCanvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            compostState.width = Math.max(520, Math.floor(rect.width));
+            compostState.height = Math.max(240, Math.floor(rect.height));
+            compostCanvas.width = compostState.width * dpr;
+            compostCanvas.height = compostState.height * dpr;
+            compostCanvas.style.width = `${compostState.width}px`;
+            compostCanvas.style.height = `${compostState.height}px`;
+            if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          };
+
+          const updateCompostUI = () => {
+            if (compostScoreEl) compostScoreEl.textContent = `${t.labels.score}: ${compostState.score}`;
+            if (compostBestEl) {
+              const waveTxt = state.lang === 'ru' ? 'волны' : 'wave';
+              compostBestEl.textContent = `${t.labels.best}: ${state.arcade.compost.bestScore || 0} (${waveTxt}: ${state.arcade.compost.bestWave || 0})`;
+            }
+            if (compostHeartsEl) compostHeartsEl.textContent = `${t.labels.hearts}: ${compostState.hearts}`;
+            if (compostSpeedEl) compostSpeedEl.textContent = `${t.labels.speed}: ${compostState.tempo.toFixed(1)}x`;
+            if (btnCompostStart) btnCompostStart.textContent = t.labels.start;
+            if (btnCompostStop) btnCompostStop.textContent = t.labels.stop;
+          };
+
+          const spawnCompostObject = () => {
+            const typeRoll = Math.random();
+            const type = typeRoll > 0.8 ? 'slag' : (typeRoll > 0.6 ? 'slow' : 'signal');
+            const speedBase = type === 'slag' ? random(70, 110) : random(40, 90);
+            compostState.objects.push({
+              x: Math.random() * compostState.width,
+              y: -12,
+              r: type === 'slag' ? 12 : 10,
+              vy: speedBase,
+              type,
+            });
+            compostState.wave += 1;
+          };
+
+          const stopCompost = () => {
+            compostState.running = false;
+            if (compostState.raf) cancelAnimationFrame(compostState.raf);
+            compostState.raf = null;
+            if (compostState.spawnTimer) clearInterval(compostState.spawnTimer);
+            compostState.spawnTimer = null;
+          };
+
+          const startCompost = () => {
+            if (compostState.running) return;
+            compostState.running = true;
+            compostState.last = null;
+            compostState.spawnTimer = setInterval(spawnCompostObject, 900);
+            compostLoop();
+          };
+
+          const resetCompost = () => {
+            stopCompost();
+            compostState.objects = [];
+            compostState.score = 0;
+            compostState.hearts = 3;
+            compostState.tempo = 1;
+            compostState.wave = 0;
+            compostState.playerX = 0.5;
+            compostState.slowUntil = 0;
+            updateCompostUI();
+            drawCompost();
+            if (compostStatus) compostStatus.textContent = t.compost.hint;
+          };
+
+          const hitCompost = (type) => {
+            if (type === 'signal') {
+              compostState.score += 25 + Math.floor(compostState.wave * 0.5);
+              if (!state.arcade.compost.bestScore || compostState.score > state.arcade.compost.bestScore) {
+                state.arcade.compost.bestScore = compostState.score;
+              }
+              if (!state.arcade.compost.bestWave || compostState.wave > state.arcade.compost.bestWave) {
+                state.arcade.compost.bestWave = compostState.wave;
+              }
+            } else if (type === 'slag') {
+              compostState.hearts -= 1;
+              compostState.tempo = Math.max(0.8, compostState.tempo - 0.1);
+            } else if (type === 'slow') {
+              compostState.slowUntil = performance.now() + 3200;
+              compostState.tempo = Math.max(0.75, compostState.tempo - 0.15);
+            }
+            updateCompostUI();
+            if (compostState.hearts <= 0) {
+              stopCompost();
+              if (compostStatus) compostStatus.textContent = state.lang === 'ru'
+                ? 'компостер переполнен. перезапусти.'
+                : 'composter flooded. restart.';
+            }
+          };
+
+          const compostLoop = (ts) => {
+            if (!compostState.running) return;
+            if (compostState.last === null) compostState.last = ts || performance.now();
+            const now = ts || performance.now();
+            const dt = (now - compostState.last) / 1000;
+            compostState.last = now;
+            const tempo = compostState.slowUntil > now ? compostState.tempo * 0.8 : compostState.tempo;
+            const scale = 1 + compostState.wave * 0.005;
+            compostState.objects.forEach((o) => {
+              o.y += o.vy * dt * tempo * scale;
+            });
+            compostState.objects = compostState.objects.filter((o) => o.y < compostState.height + 20);
+            const playerY = compostState.height - 28;
+            const bowlWidth = 90;
+            compostState.objects.forEach((o) => {
+              const dx = Math.abs(o.x - compostState.playerX * compostState.width);
+              const dy = Math.abs(o.y - playerY);
+              if (dx < (bowlWidth / 2) && dy < 28) {
+                hitCompost(o.type);
+                o.y = compostState.height + 200;
+              }
+            });
+            drawCompost();
+            compostState.raf = requestAnimationFrame(compostLoop);
+          };
+
+          const drawCompost = () => {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, compostState.width, compostState.height);
+            ctx.fillStyle = '#0b1a30';
+            ctx.fillRect(0, 0, compostState.width, compostState.height);
+            ctx.fillStyle = '#122b46';
+            for (let i = 0; i < compostState.width; i += 42) {
+              ctx.fillRect(i, compostState.height - 60, 12, 2);
+            }
+            compostState.objects.forEach((o) => {
+              if (o.type === 'signal') ctx.fillStyle = '#6fffb0';
+              else if (o.type === 'slow') ctx.fillStyle = '#c084fc';
+              else ctx.fillStyle = '#ff6b6b';
+              ctx.beginPath();
+              ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
+              ctx.fill();
+            });
+            const bowlX = compostState.playerX * compostState.width;
+            const bowlW = 90;
+            const bowlH = 24;
+            ctx.fillStyle = '#f8f7ff';
+            ctx.fillRect(bowlX - bowlW / 2, compostState.height - bowlH - 4, bowlW, bowlH);
+            ctx.fillStyle = '#7c9ae6';
+            ctx.fillRect(bowlX - bowlW / 2 + 4, compostState.height - bowlH, bowlW - 8, 6);
+          };
+
+          const moveBowl = (dir) => {
+            const delta = 0.04;
+            compostState.playerX = Math.max(0.05, Math.min(0.95, compostState.playerX + dir * delta));
+            drawCompost();
+          };
+
+          if (compostCanvas) {
+            compostCanvas.addEventListener('pointermove', (ev) => {
+              const rect = compostCanvas.getBoundingClientRect();
+              compostState.playerX = Math.max(0.05, Math.min(0.95, (ev.clientX - rect.left) / rect.width));
+              drawCompost();
+            });
+            compostCanvas.addEventListener('click', () => { if (!compostState.running) startCompost(); });
+          }
+
+          if (btnCompostStart) btnCompostStart.addEventListener('click', startCompost);
+          if (btnCompostStop) btnCompostStop.addEventListener('click', stopCompost);
+          if (btnCompostReset) btnCompostReset.addEventListener('click', resetCompost);
+
+          const onKey = (ev) => {
+            const target = document.activeElement;
+            if (target && ['INPUT','TEXTAREA'].includes(target.tagName)) return;
+            if (!win || win.classList.contains('minimized')) return;
+            if (ev.key === 'ArrowLeft' || ev.key.toLowerCase() === 'a') { moveBowl(-1); }
+            if (ev.key === 'ArrowRight' || ev.key.toLowerCase() === 'd') { moveBowl(1); }
+            if (ev.key === ' ' || ev.key === 'Enter') {
+              if (panels.some((p) => p.classList.contains('active') && p.dataset.game === 'pulse')) {
+                pulseStrike();
+              }
+            }
+          };
+          state.arcadeKeyHandler = onKey;
+          window.addEventListener('keydown', onKey);
+
+          resizeCompost();
+          resetNebula();
+          resetPulse();
+          resetCompost();
+          showNebulaBest();
+          updatePulseUI();
+          updateCompostUI();
+          state.arcadeResizeHandler = () => { resizeCompost(); drawCompost(); };
+          window.addEventListener('resize', state.arcadeResizeHandler);
+          setTab('nebula');
         };
 
         const initSettings = (shell) => {
