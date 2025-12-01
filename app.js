@@ -4227,6 +4227,8 @@
           const tabs = Array.from(win.querySelectorAll('.task-tab'));
           const panels = Array.from(win.querySelectorAll('.task-panel'));
           const barsWrap = win.querySelector('.task-chart-bars');
+          const ramBarsWrap = win.querySelector('.task-chart-bars.ram');
+          const diskBarsWrap = win.querySelector('.task-chart-bars.disk');
           const bpmEl = win.querySelector('[data-task="cpu-bpm"]');
           const ramEl = win.querySelector('[data-task="ram-value"]');
           const diskEl = win.querySelector('[data-task="disk-status"]');
@@ -4247,22 +4249,46 @@
             });
           });
 
-          const bars = [];
-          const barCount = 42;
-          if (barsWrap) {
-            barsWrap.innerHTML = '';
-            for (let i = 0; i < barCount; i++) {
-              const bar = document.createElement('div');
-              bar.className = 'task-bar';
-              bar.style.height = '2%';
-              barsWrap.appendChild(bar);
-              bars.push(bar);
+          const makeBars = (wrap, count) => {
+            const list = [];
+            if (wrap) {
+              wrap.innerHTML = '';
+              for (let i = 0; i < count; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'task-bar';
+                bar.style.height = '4%';
+                wrap.appendChild(bar);
+                list.push(bar);
+              }
             }
-          }
+            return list;
+          };
 
-          let cpuData = new Array(barCount).fill(0);
-          let beatIdx = 0;
-          let tempo = 1.0;
+          const bars = makeBars(barsWrap, 42);
+          const ramBars = makeBars(ramBarsWrap, 28);
+          const diskBars = makeBars(diskBarsWrap, 28);
+
+          let cpuData = new Array(bars.length || 42).fill(6);
+          let bpm = random(60, 90);
+          let beatShape = [];
+          let beatPos = 0;
+          let stepDelay = 120;
+          const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
+          const beatTemplates = [
+            [6,6,8,12,88,42,18,10,8,6,6,6,6,6,6,6,6],
+            [6,6,10,24,86,36,16,8,6,12,46,20,8,6,6,6,6],
+            [6,6,8,10,84,32,14,8,6,6,18,8,6,6,6],
+          ];
+
+          const pickBeat = () => {
+            const tpl = beatTemplates[random(0, beatTemplates.length - 1)];
+            beatShape = tpl.map((v) => clamp(v + random(-2, 2), 4, 96));
+            beatPos = 0;
+            bpm = random(60, 90);
+            const baseDelay = Math.round((60000 / bpm) / beatShape.length);
+            stepDelay = clamp(baseDelay, 45, 260);
+            updateBpm();
+          };
 
           const renderBars = () => {
             bars.forEach((bar, idx) => {
@@ -4272,23 +4298,22 @@
           };
           const updateBpm = () => {
             if (!bpmEl) return;
-            const bpm = Math.max(44, Math.min(180, Math.round(78 / tempo + random(-3, 6))));
             bpmEl.textContent = taskTxt.bpmLabel ? taskTxt.bpmLabel(bpm) : `${bpm} bpm`;
           };
           const pumpCpu = () => {
             if (state.taskMgr.crashActive) return;
-            const pattern = [0, 22, 47, 22, 0, 14, 34, 14, 0];
-            const base = pattern[beatIdx % pattern.length];
-            const wobble = random(-3, 7);
-            const spike = Math.random() < 0.08 ? random(10, 22) : 0;
-            const val = Math.max(0, Math.min(100, base + wobble + spike));
+            if (!beatShape.length || beatPos >= beatShape.length) {
+              pickBeat();
+            }
+            const base = beatShape[beatPos] || 6;
+            const wobble = random(-2, 3);
+            const val = clamp(base + wobble, 0, 100);
             cpuData = [...cpuData.slice(1), val];
             renderBars();
             updateBpm();
-            beatIdx += 1;
-            if (Math.random() < 0.22) tempo = 0.82 + Math.random() * 0.58;
-            const busy = base > 0;
-            const delay = Math.max(70, Math.round((busy ? random(110, 160) : random(180, 280)) * tempo));
+            beatPos += 1;
+            const jitter = 0.9 + Math.random() * 0.18;
+            const delay = clamp(Math.round(stepDelay * jitter), 45, 260);
             state.taskMgr.cpuTimer = setTimeout(pumpCpu, delay);
           };
 
@@ -4305,9 +4330,21 @@
           };
           const refreshRam = () => {
             if (ramEl) ramEl.textContent = randomRam();
+            if (ramBars.length) {
+              ramBars.forEach((bar) => {
+                const v = random(8, 92);
+                bar.style.height = `${v}%`;
+              });
+            }
           };
           const refreshDisk = () => {
             if (diskEl) diskEl.textContent = Math.random() < 0.001 ? taskTxt.lockedAlt : taskTxt.locked;
+            if (diskBars.length) {
+              diskBars.forEach((bar) => {
+                const v = random(6, 78);
+                bar.style.height = `${v}%`;
+              });
+            }
           };
 
           const spawnCrashOverlay = () => {
@@ -4372,6 +4409,7 @@
             });
           }
 
+          pickBeat();
           setTab('cpu');
           refreshRam();
           refreshDisk();

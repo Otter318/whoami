@@ -1582,7 +1582,11 @@ body.gui-mode .input-field { color: #f0f0f0; border-bottom-color: #b5d1ff; }
       }
       .task-chart {
         border: 1px solid #9cb9b7;
-        background: linear-gradient(180deg, #0c1829, #07101d);
+        background:
+          linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+          linear-gradient(180deg, #0c1829, #07101d);
+        background-size: 26px 26px, 26px 26px, auto;
         box-shadow: inset 0 0 0 1px #0e2235;
         padding: 8px;
         height: 200px;
@@ -1590,7 +1594,7 @@ body.gui-mode .input-field { color: #f0f0f0; border-bottom-color: #b5d1ff; }
       .task-chart-bars {
         display: flex;
         align-items: flex-end;
-        gap: 3px;
+        gap: 1px;
         height: 100%;
       }
       .task-chart.ram { background: linear-gradient(180deg, #0d1321, #0a0f1b); }
@@ -1603,12 +1607,12 @@ body.gui-mode .input-field { color: #f0f0f0; border-bottom-color: #b5d1ff; }
       }
       .task-bar {
         flex: 1;
-        min-width: 4px;
-        background: linear-gradient(180deg, #7bffb3, #0f3c36);
-        box-shadow: 0 0 6px rgba(123,255,179,0.45);
+        min-width: 2px;
+        background: linear-gradient(180deg, #67e3ff, #0f3f54);
+        box-shadow: 0 0 6px rgba(103,227,255,0.45);
         transition: height 120ms ease, background 240ms ease;
       }
-      .task-bar:nth-child(3n) { background: linear-gradient(180deg, #6dd3ff, #0f2f3f); }
+      .task-bar:nth-child(3n) { background: linear-gradient(180deg, #5ac9ff, #0d3245); }
       .task-ram, .task-disk {
         border: 1px solid #9cb9b7;
         background: #eef6f5;
